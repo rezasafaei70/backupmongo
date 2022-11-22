@@ -1,0 +1,1 @@
+{"error":0,"message":"Upload Successful, Deleted Local Copy of Backup","data":{"ETag":"\"5b2046ee299507015ec8b5403536447a\"","Location":"https://xglobebackup.s3.ir-thr-at1.arvanstorage.ir/admin_2022-11-22T20-56-22.gz","key":"admin_2022-11-22T20-56-22.gz","Key":"admin_2022-11-22T20-56-22.gz","Bucket":"xglobebackup"}}

@@ -65,6 +65,6 @@ setInterval(() => {
     }, rejected => {
         console.error(rejected);
     });
-}, 10000 );
+}, 60 * 60 * 1 * 1000 );
 
 

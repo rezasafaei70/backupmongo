@@ -10,6 +10,8 @@ var backupConfig2 = {
     mongodb: {
         "database": process.env.DATABSE,
         "host": process.env.HOST,
+        "username":process.env.USERNAME,
+        "password":process.env.PASSWORD,
         "port": process.env.PORT
     },
     s3: {

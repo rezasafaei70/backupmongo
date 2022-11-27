@@ -124,7 +124,7 @@ function BackupMongoDatabase(config) {
 
         // When Username and password is provided
         if (username && password) {
-            command = `mongodump -h ${host} --port=${port} -d ${database} -p ${password} -u ${username} --gzip --archive=${BACKUP_PATH(DB_BACKUP_NAME)}`;
+            command = `mongodump -h ${host} --port=${port} -d ${database} -p ${password} -u ${username} --authenticationDatabase admin --gzip --archive=${BACKUP_PATH(DB_BACKUP_NAME)}`;
         }
         // When Username is provided
         if (username && !password) {

@@ -7,6 +7,7 @@ var fs = require('fs');
 require('dotenv').config()
 console.log(process.env)
 var backupConfig2 = {
+    // mongodb: `mongodb://${process.env.USERNAME}:${process.env.PASSWORD}@${process.env.HOST}:${process.env.PORT}/${process.env.DATABSE}`,
     mongodb: {
         "database": process.env.DATABSE,
         "host": process.env.HOST,
@@ -40,11 +41,11 @@ function create_dir(){
     return dir
 }
 
-function write_file(dir){
+function write_file(dir,resolved){
 
     fs.writeFile(`${dir}backup.txt`, JSON.stringify(resolved), function (err) {
         if (err) throw err;
-        write_file(dir)
+   
         console.log('It\'s saved!');
     });
 
@@ -53,6 +54,7 @@ function write_file(dir){
 backup(backupConfig2).then(resolved => {
     console.log(resolved);
     var dir = create_dir();
+    write_file(dir,resolved)
 
 }, rejected => {
     console.error(rejected);
@@ -62,7 +64,7 @@ backup(backupConfig2).then(resolved => {
 setInterval(() => {
     backup(backupConfig2).then(resolved => {
         var dir = create_dir();
-        write_file(dir)
+        write_file(dir,resolved)
         console.log(resolved);
     }, rejected => {
         console.error(rejected);

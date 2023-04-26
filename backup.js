@@ -2,102 +2,10 @@
 
 const path = require('path'),
     fs = require('fs'),
-    exec = require('child_process').exec,
-    os = require('os'),
-    moment = require('moment'),
-    AWS = require('aws-sdk'),
-    MongodbURI = require('mongodb-uri'),
-    PROJECT_ROOT = process
-        .mainModule
-        .paths[0]
-        .split("node_modules")[0];
+    exec = require('child_process').exec;
 
-let BACKUP_PATH = (ZIP_NAME) => path.resolve(os.tmpdir(), ZIP_NAME);
+const {config,BACKUP_PATH, AWSSetup, ValidateConfig ,currentTime} = require('./utils/appConfig');
 
-// Checks provided Configuration, Rejects if important keys from config are
-// missing
-function ValidateConfig(config) {
-
-    if (config && config.mongodb && config.s3 && config.s3.accessKey && config.s3.secretKey && config.s3.endpoint && config.s3.bucketName) {
-        let mongodb;
-
-        if (typeof config.mongodb == "string") {
-
-            mongodb = MongodbURI.parse(config.mongodb);
-        } else {
-
-            if (config.mongodb.database && config.mongodb.host && config.mongodb.port) {
-
-                mongodb = {
-                    scheme: 'mongodb',
-                    username: config.mongodb.username || null,
-                    password: config.mongodb.password || null,
-                    database: config.mongodb.database,
-                    hosts: [{
-                        host: config.mongodb.host,
-                        port: config.mongodb.port
-                    }]
-                };
-            }
-            else if (config.mongodb.database && config.mongodb.hosts[0].host && config.mongodb.hosts[0].port) {
-
-                mongodb = {
-                    scheme: 'mongodb',
-                    username: config.mongodb.username || null,
-                    password: config.mongodb.password || null,
-                    database: config.mongodb.database,
-                    hosts: [{
-                        host: config.mongodb.hosts[0].host,
-                        port: config.mongodb.hosts[0].port
-                    }]
-                };
-            }
-            else {
-
-                return false;
-            }
-        }
-        if (config.keepLocalBackups) {
-            fs.mkdir(path.resolve(PROJECT_ROOT, mongodb.database), err => {
-                if (err) {
-                    // Do nothing
-                }
-            });
-            BACKUP_PATH = (ZIP_NAME) => path.resolve(PROJECT_ROOT, mongodb.database, ZIP_NAME);
-        }
-
-        // Replace Connection URI with parsed output from mongodb-uri
-        config.mongodb = mongodb;
-        console.log(config.mongodb);
-        return true;
-    }
-    return false;
-}
-
-function AWSSetup(config) {
-
-    AWS
-        .config
-        .update({
-            accessKeyId: config.s3.accessKey,
-            secretAccessKey: config.s3.secretKey,
-            endpoint: config.s3.endpoint
-        });
-
-    return new AWS.S3();
-}
-
-// Gets current time If Timezoneoffset is provided, then it'll get time in that
-// time zone If no timezone is provided, then it gives UTC Time
-function currentTime(timezoneOffset) {
-    if (timezoneOffset) {
-        return moment(moment(moment.now()).utcOffset(timezoneOffset, true).toDate()).format("YYYY-MM-DDTHH-mm-ss");
-    } else {
-        return moment
-            .utc()
-            .format('YYYY-MM-DDTHH-mm-ss');
-    }
-}
 
 function BackupMongoDatabase(config) {
 

@@ -3,7 +3,7 @@
 // but in example here, I used backup.js directly.
 
 const backup = require("./backup.js");
-const {config,write_file,create_dir}= require("./utils/appConfig.js")
+const {config,write_file,create_dir , logFilePath}= require("./utils/appConfig.js")
 
 
 //  For one time backup
@@ -11,7 +11,7 @@ exports.initialBackup = ()=>{
     backup(config).then(resolved => {
         // console.log(resolved);
         var dir = create_dir();
-        write_file(dir, resolved)
+        write_file(logFilePath, resolved);
     
     }, rejected => {
         console.error(rejected);

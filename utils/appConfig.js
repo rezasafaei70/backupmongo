@@ -11,8 +11,8 @@ const path = require('path'),
         .paths[0]
         .split("node_modules")[0];
 
-let BACKUP_PATH = (ZIP_NAME) => path.resolve(os.tmpdir(), ZIP_NAME);
-exports.BACKUP_PATH = BACKUP_PATH;
+exports.BACKUP_PATH = (ZIP_NAME) => path.resolve(os.tmpdir(), ZIP_NAME);
+exports.logFilePath = `${PROJECT_ROOT}/database/temp/backup.txt`;
 
 exports.config = {
     // mongodb: `mongodb://${process.env.USERNAME}:${process.env.PASSWORD}@${process.env.HOST}:${process.env.PORT}/${process.env.DATABSE}`,
@@ -130,40 +130,39 @@ exports.create_dir = () => {
     return dir
 }
 
-exports.write_file = (dir, resolved) => {
-    const pathFile = `${dir}backup.txt`;
-    if (!fs.existsSync(pathFile)) {
-        fs.writeFile(pathFile, `\n${JSON.stringify(resolved)}`, function (err) {
+exports.write_file = (filePath, resolved) => {
+    if (!fs.existsSync(filePath)) {
+        fs.writeFile(filePath, `\n${JSON.stringify(resolved)}`, function (err) {
             if (err) throw err;
             console.log('It\'s saved!');
         });
     }
     else {
-        fs.appendFile(pathFile, `\n${JSON.stringify(resolved)}`, function (err) {
+        fs.appendFile(filePath, `\n${JSON.stringify(resolved)}`, function (err) {
             if (err) throw err;
             console.log('It\'s saved!');
         });
     }
 }
 
-exports.read_file = () => {
+exports.read_file = (filePath) => {
     return new Promise((resolve, reject) => {
-        var dir = `./database/temp/`;
-        fs.readFile(`${dir}backup.txt`, 'utf-8', (err, data) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-    
-          const objects = data.trim().split('\n').map(JSON.parse);
-          const keys = objects.map(obj => {
-            const newObj = { ...obj };
-            newObj.key = obj.data.key;
-            delete newObj.data;
-            return JSON.stringify(newObj);
-          });
-    
-          resolve(keys);
+        fs.readFile(filePath, 'utf-8', (err, data) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+
+            const objects = data.trim().split('\n').map(JSON.parse);
+            const keys = objects.map(obj => {
+                const newObj = { ...obj };
+                newObj.key = obj.data.key;
+                delete newObj.data;
+                return JSON.stringify(newObj);
+            });
+
+            resolve(keys);
         })
-      });
+    });
 }
+

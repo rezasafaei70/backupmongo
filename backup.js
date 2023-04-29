@@ -4,7 +4,7 @@ const path = require('path'),
     fs = require('fs'),
     exec = require('child_process').exec;
 
-const { config, BACKUP_PATH, logFilePath, AWSSetup, ValidateConfig, currentTime } = require('./utils/appConfig');
+const { config, BACKUP_PATH, logFilePath, AWSSetup, ValidateConfig, currentTime ,uploadFile } = require('./utils/appConfig');
 
 
 function BackupMongoDatabase(config) {
@@ -214,43 +214,7 @@ function CreateBackup(config) {
     });
 }
 
-function UploadFile(config, filePath) {
-    let s3 = AWSSetup(config);
 
-    return new Promise((resolve, reject) => {
-        let fileStream = fs.createReadStream(filePath);
-
-        fileStream.on('error', err => {
-            return reject({
-                error: 1,
-                message: err.message
-            });
-        });
-
-        let uploadParams = {
-            Bucket: config.s3.bucketName,
-            Key: filePath.split('/').pop(),
-            Body: fileStream
-        };
-
-        s3.upload(uploadParams, (err, data) => {
-            if (err) {
-                return reject({
-                    error: 1,
-                    message: err.message,
-                    code: err.code
-                });
-            }
-
-                resolve({
-                    error: 0,
-                    message: "Upload Successful",
-                    data: data
-                });
-            
-        });
-    });
-}
 
 function BackupAndUpload(config) {
     // Check if the configuration is valid
@@ -262,7 +226,7 @@ function BackupAndUpload(config) {
             // Upload it to S3
             return UploadBackup(config, backupResult).then(res => {
                 //Upload log file
-                return UploadFile(config, logFilePath).then(uploadLogFile => {
+                return uploadFile(config, logFilePath).then(uploadLogFile => {
                     console.log(uploadLogFile)
                     return Promise.resolve(res);
                 }, err => {

@@ -32,7 +32,8 @@ exports.config = {
     },
     keepLocalBackups: false, //If true, It'll create a folder in project root with database's name and store backups in it and if it's false, It'll use temporary directory of OS.
     noOfLocalBackups: 2, //This will only keep the most recent 5 backups and delete all older backups from local backup directory
-    timezoneOffset: 300 //Timezone, Used in naming backups, It is assumed to be in hours if less than 16 and in minutes otherwise
+    timezoneOffset: 300, //Timezone, Used in naming backups, It is assumed to be in hours if less than 16 and in minutes otherwise
+    daysAgoDeleteStorageBackups: process.env.DAYS_AGO_DELETE_STORAGE_BACKUPS  //Deleting backups of a few days ago on Storage
 };
 
 // Checks provided Configuration, Rejects if important keys from config are
@@ -95,7 +96,7 @@ exports.ValidateConfig = (config) => {
     return false;
 }
 
-exports.AWSSetup = (config) => {
+const AWSSetup = exports.AWSSetup = (config) => {
 
     AWS
         .config
@@ -132,13 +133,13 @@ exports.create_dir = () => {
 
 exports.write_file = (filePath, resolved) => {
     if (!fs.existsSync(filePath)) {
-        fs.writeFile(filePath, `\n${JSON.stringify(resolved)}`, function (err) {
+        fs.writeFile(filePath, `${JSON.stringify(resolved)}\n`, function (err) {
             if (err) throw err;
             console.log('It\'s saved!');
         });
     }
     else {
-        fs.appendFile(filePath, `\n${JSON.stringify(resolved)}`, function (err) {
+        fs.appendFile(filePath, `${JSON.stringify(resolved)}\n`, function (err) {
             if (err) throw err;
             console.log('It\'s saved!');
         });
@@ -166,3 +167,88 @@ exports.read_file = (filePath) => {
     });
 }
 
+exports.delete_fileRows = (filePath, keysToDelete) => {
+    return new Promise((resolve, reject) => {
+        fs.readFile(filePath, 'utf-8', (err, data) => {
+            if (err) {
+                return reject({
+                    error: 1,
+                    status: 'fail',
+                    statusCode: 400,
+                    message: err.message
+                });
+            }
+
+            //? get objects
+            const objects = data.trim();
+            if (objects.length === 0) {
+                return reject({
+                    error: 1,
+                    status: 'fail',
+                    statusCode: 404,
+                    message: 'no file was found!'
+                });
+            }
+
+            //? split the file contents into objects
+            //? remove objects with keys in the keysToDelete array
+            const filteredObjects = objects.split('\n').map(JSON.parse).filter(obj => !keysToDelete.includes(obj.data.Key));
+
+            //? write the remaining objects back to the file
+            fs.writeFile(filePath, filteredObjects.map(JSON.stringify).join('\n'), function (err) {
+                if (err) {
+                    reject({
+                        error: 1,
+                        status: 'fail',
+                        statusCode: 400,
+                        message: err.message
+                    });
+                }
+
+                resolve({
+                    error: 0,
+                    status: 'success',
+                    message: 'file update operation was done successfully!'
+                });
+            });
+        })
+    });
+}
+
+exports.uploadFile = (config, filePath) => {
+    let s3 = AWSSetup(config);
+
+    return new Promise((resolve, reject) => {
+        let fileStream = fs.createReadStream(filePath);
+
+        fileStream.on('error', err => {
+            return reject({
+                error: 1,
+                message: err.message
+            });
+        });
+
+        let uploadParams = {
+            Bucket: config.s3.bucketName,
+            Key: filePath.split('/').pop(),
+            Body: fileStream
+        };
+
+        s3.upload(uploadParams, (err, data) => {
+            if (err) {
+                return reject({
+                    error: 1,
+                    message: err.message,
+                    code: err.code
+                });
+            }
+
+            resolve({
+                error: 0,
+                message: "Upload Successful",
+                data: data
+            });
+
+        });
+    });
+}

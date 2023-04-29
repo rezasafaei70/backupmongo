@@ -14,7 +14,7 @@ const path = require('path'),
 exports.BACKUP_PATH = (ZIP_NAME) => path.resolve(os.tmpdir(), ZIP_NAME);
 exports.logFilePath = `${PROJECT_ROOT}/database/temp/backup.txt`;
 
-exports.config = {
+const config = exports.config = {
     // mongodb: `mongodb://${process.env.USERNAME}:${process.env.PASSWORD}@${process.env.HOST}:${process.env.PORT}/${process.env.DATABSE}`,
     mongodb: {
         "database": process.env.DATABSE,
@@ -132,26 +132,57 @@ exports.create_dir = () => {
 }
 
 exports.write_file = (filePath, resolved) => {
-    if (!fs.existsSync(filePath)) {
-        fs.writeFile(filePath, `${JSON.stringify(resolved)}\n`, function (err) {
-            if (err) throw err;
-            console.log('It\'s saved!');
+    return new Promise((resolve, reject) => {
+
+        //? If the file does not exist, a write operation will be performed for the new file,
+        if (!fs.existsSync(filePath)) {
+            fs.writeFile(filePath, `${JSON.stringify(resolved)}\n`, function (err) {
+                if (err) {
+                    return reject({
+                        error: 1,
+                        status: 'fail',
+                        statusCode: 400,
+                        message: err.message
+                    });
+                }
+                console.log('It\'s saved!');
+            });
+        }
+        //? and if the file exists, it will be added to file
+        else {
+            fs.appendFile(filePath, `${JSON.stringify(resolved)}\n`, function (err) {
+                if (err) {
+                    return reject({
+                        error: 1,
+                        status: 'fail',
+                        statusCode: 400,
+                        message: err.message
+                    });
+                }
+                console.log('It\'s saved!');
+            });
+        }
+
+        resolve({
+            error: 0,
+            status: 'success',
+            message: 'file write operation was done successfully!'
         });
-    }
-    else {
-        fs.appendFile(filePath, `${JSON.stringify(resolved)}\n`, function (err) {
-            if (err) throw err;
-            console.log('It\'s saved!');
-        });
-    }
+    });
 }
 
 exports.read_file = (filePath) => {
     return new Promise((resolve, reject) => {
+
+        //? reading the lines of the log file to get the name of the uploaded files
         fs.readFile(filePath, 'utf-8', (err, data) => {
             if (err) {
-                reject(err);
-                return;
+                return reject({
+                    error: 1,
+                    status: 'fail',
+                    statusCode: 400,
+                    message: err.message
+                });
             }
 
             const objects = data.trim().split('\n').map(JSON.parse);
@@ -162,7 +193,12 @@ exports.read_file = (filePath) => {
                 return JSON.stringify(newObj);
             });
 
-            resolve(keys);
+            resolve({
+                error: 0,
+                status: 'success',
+                message: 'file read operation was done successfully!',
+                data: { keys }
+            });
         })
     });
 }
@@ -197,7 +233,7 @@ exports.delete_fileRows = (filePath, keysToDelete) => {
             //? write the remaining objects back to the file
             fs.writeFile(filePath, filteredObjects.map(JSON.stringify).join('\n'), function (err) {
                 if (err) {
-                    reject({
+                    return reject({
                         error: 1,
                         status: 'fail',
                         statusCode: 400,
@@ -215,7 +251,7 @@ exports.delete_fileRows = (filePath, keysToDelete) => {
     });
 }
 
-exports.uploadFile = (config, filePath) => {
+exports.upload_file = (filePath) => {
     let s3 = AWSSetup(config);
 
     return new Promise((resolve, reject) => {
@@ -224,6 +260,8 @@ exports.uploadFile = (config, filePath) => {
         fileStream.on('error', err => {
             return reject({
                 error: 1,
+                status: 'fail',
+                statusCode: 400,
                 message: err.message
             });
         });
@@ -238,6 +276,8 @@ exports.uploadFile = (config, filePath) => {
             if (err) {
                 return reject({
                     error: 1,
+                    status: 'fail',
+                    statusCode: 400,
                     message: err.message,
                     code: err.code
                 });
@@ -245,7 +285,8 @@ exports.uploadFile = (config, filePath) => {
 
             resolve({
                 error: 0,
-                message: "Upload Successful",
+                status: 'success',
+                message: 'file upload operation was done successfully!',
                 data: data
             });
 

@@ -1,8 +1,9 @@
 
-const { AWSSetup, delete_fileRows, uploadFile, logFilePath, ValidateConfig } = require('./utils/appConfig');
+const { AWSSetup, delete_fileRows, upload_file, logFilePath, config } = require('./utils/appConfig');
+const AppError = require('./utils/appError');
 
 //? delete files in the storage
-const deleteStorageBackups = (config, objectsToDelete) => {
+const deleteStorageBackups = exports.deleteStorageBackups = (objectsToDelete) => {
 
     //?config aws setup
     let s3 = AWSSetup(config);
@@ -37,7 +38,7 @@ const deleteStorageBackups = (config, objectsToDelete) => {
 }
 
 //? get storage files
-const getFilesInDirectory = (config) => {
+const getFilesInDirectory = exports.getFilesInDirectory = () => {
     //?config aws setup
     let s3 = AWSSetup(config);
 
@@ -66,15 +67,10 @@ const getFilesInDirectory = (config) => {
 }
 
 //? delete files in the storage a few days ago, then update the log file and upload that to the storage
-exports.deleteStorageBackupsByDate = (config) => {
-    return new Promise((resolve, reject) => {
-        let isValidConfig = ValidateConfig(config);
-        if (isValidConfig) {
-
-        }
-
+exports.deleteStorageBackupsByDate = () => {
+   // return new Promise((resolve, reject) => {
         //? getall files from storage
-        getFilesInDirectory(config).then((getFilesInDirectoryResponse) => {
+        getFilesInDirectory().then((getFilesInDirectoryResponse) => {
             if (getFilesInDirectoryResponse.data.files.length === 0) {
                 return reject(getFilesInDirectoryResponse);
             }
@@ -96,7 +92,7 @@ exports.deleteStorageBackupsByDate = (config) => {
             }
 
             //? delete files from storage
-            deleteStorageBackups(config, filteredObjects)
+            deleteStorageBackups(filteredObjects)
                 .then((deleteStorageBackupsResponse) => {
                     if (deleteStorageBackupsResponse.data.files.length === 0) {
                         return reject(deleteStorageBackupsResponse);
@@ -106,7 +102,7 @@ exports.deleteStorageBackupsByDate = (config) => {
                     delete_fileRows(logFilePath, filteredObjects.map((file) => file.Key))
                         .then((response) => {
                             //?upload log text file on the storage
-                            uploadFile(config, logFilePath).then((res) => {
+                            upload_file(config, logFilePath).then((res) => {
                                 resolve({
                                     error: 0,
                                     status: 'success',
@@ -115,32 +111,15 @@ exports.deleteStorageBackupsByDate = (config) => {
                             })
                         })
                         .catch((error) => {
-                            return reject({
-                                error: 1,
-                                status: error.status,
-                                statusCode: error.statusCode,
-                                message: error.message
-                            });
+                            return reject(error);
                         });
                 })
                 .catch((error) => {
-                    return reject({
-                        error: 1,
-                        status: error.status,
-                        statusCode: error.statusCode,
-                        message: error.message
-                    });
+                    return reject(error);
                 });
         })
             .catch((error) => {
-                return reject({
-                    error: 1,
-                    status: error.status,
-                    statusCode: error.statusCode,
-                    message: error.message
-                });
+                return reject(error);
             });
-    });
+   //});
 }
-
-

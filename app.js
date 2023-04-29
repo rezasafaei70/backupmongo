@@ -3,7 +3,8 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv').config({ path: './config.env' });
 const backupScheduler= require('./backupScheduler');
-const AppError = require('./utils/appError')
+const AppError = require('./utils/appError');
+const {create_dir}= require('./utils/appConfig');
 
 const app = express();
 
@@ -22,6 +23,8 @@ app.use('/api', limiter);
 
 app.use('/api/v1/restore', restoreRouter);
 app.use('/api/v1/backup', backupRouter);
+
+app.use(create_dir);
 
 app.all('*', (req, res, next) => {
   next(new AppError(`The ${req.originalUrl} can not find on this server!`, 404));

@@ -6,6 +6,7 @@ const backupController = require('./../controllers/backupController')
 router
   .route('/')
   .post(backupController.backupDB)
-  .get(backupController.directory);
+  .get(backupController.directory)
+  .delete(backupController.deleteStorageBackups);
 
 module.exports = router;

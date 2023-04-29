@@ -1,36 +1,71 @@
 const backup = require('./../backup');
-const { config, read_file, write_file , create_dir } = require('./../utils/appConfig')
+const storageHandler = require('./../storageHandler');
+const {config} = require('./../utils/appConfig');
 
 exports.backupDB = (req, res, next) => {
-    backup(config).then(resolved => {
-        var dir = create_dir();
-        write_file(dir, resolved);
+    backup(config).then(resolved => {        
         res.status(200).json({
-            status: 'success',
+            status: resolved.status,
             message: resolved.message
         });
 
     }, rejected => {
         console.error(rejected);
+        res.status(rejected.statusCode || 500).json({
+            status: rejected.status,
+            message: rejected.message
+        });
+    }).catch(err => {
+        console.error(err);
         res.status(500).json({
             status: 'error',
-            message: rejected.message
+            message: err.message
         });
     });
 }
 
 exports.directory = (req, res, next) => {
-    read_file().then(resolved => {
+    storageHandler.getFilesInDirectory().then(resolved => {
         res.status(200).json({
-            status: 'success',
-            data: {data:resolved}
+            status: resolved.status,
+            message: resolved.message,
+            data: {files: resolved.data.files
+                .map(file=>({Key: file.Key,
+                 LastModified:file.LastModified,
+                 Size:file.Size})) }
         });
-
     }, rejected => {
         console.error(rejected);
+        res.status(rejected.statusCode).json({
+            status: rejected.status,
+            message: rejected.message
+        });
+    }).catch(err => {
+        console.error(err);
         res.status(500).json({
             status: 'error',
-            message: rejected
+            message: err.message
+        });
+    });
+}
+
+exports.deleteStorageBackups = (req, res, next) => {
+    storageHandler.deleteStorageBackupsByDate().then(resolved => {
+        res.status(200).json({
+            status: resolved.status,
+            message: resolved.message
+        });
+    }, rejected => {
+        console.error(rejected);
+        res.status(rejected.statusCode).json({
+            status: rejected.status,
+            message: rejected.message
+        });
+    }).catch(err => {
+        console.error(err);
+        res.status(500).json({
+            status: 'error',
+            message: err.message
         });
     });
 }

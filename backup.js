@@ -4,7 +4,7 @@ const path = require('path'),
     fs = require('fs'),
     exec = require('child_process').exec;
 
-const { config, BACKUP_PATH, logFilePath, AWSSetup, ValidateConfig, currentTime ,uploadFile } = require('./utils/appConfig');
+const { BACKUP_PATH, logFilePath, AWSSetup, ValidateConfig, currentTime, upload_file, write_file } = require('./utils/appConfig');
 
 
 function BackupMongoDatabase(config) {
@@ -215,7 +215,6 @@ function CreateBackup(config) {
 }
 
 
-
 function BackupAndUpload(config) {
     // Check if the configuration is valid
     let isValidConfig = ValidateConfig(config);
@@ -224,11 +223,17 @@ function BackupAndUpload(config) {
         // Create a backup of database
         return CreateBackup(config).then(backupResult => {
             // Upload it to S3
-            return UploadBackup(config, backupResult).then(res => {
-                //Upload log file
-                return uploadFile(config, logFilePath).then(uploadLogFile => {
-                    console.log(uploadLogFile)
-                    return Promise.resolve(res);
+            return UploadBackup(config, backupResult).then(uploadBackupResponse => {
+                //Write log file
+                return write_file(logFilePath, uploadBackupResponse).then(writeFileResponse => {
+                    console.log(writeFileResponse);
+                    //Upload log file
+                    return upload_file(logFilePath).then(uploadLogFileResponse => {
+                        console.log(uploadLogFileResponse);
+                        return Promise.resolve(uploadBackupResponse);
+                    }, err => {
+                        return Promise.reject(err);
+                    });
                 }, err => {
                     return Promise.reject(err);
                 });

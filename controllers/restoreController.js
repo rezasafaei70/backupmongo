@@ -1,5 +1,5 @@
 const restore = require('./../restore');
-const { config } = require('./../utils/appConfig')
+const { config } = require('./../utils/appConfig');
 
 exports.restoreDB = (req, res, next) => {
     const { key } = req.params;
@@ -15,6 +15,10 @@ exports.restoreDB = (req, res, next) => {
             status: 'error',
             message: rejected.message
         });
-    });
+    }).catch(err=>{
+        res.status(500).json({
+            status: 'error',
+            message: err.message
+        });
+    })
 }
-

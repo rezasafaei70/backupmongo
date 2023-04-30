@@ -1,8 +1,9 @@
 const backup = require('./../backup');
 const storageHandler = require('./../storageHandler');
+const pingServer = require('./../utils/pingServer')
 
 exports.backupDB = (req, res, next) => {
-    backup().then(resolved => {        
+    backup().then(resolved => {
         res.status(200).json({
             status: resolved.status,
             message: resolved.message
@@ -28,10 +29,14 @@ exports.directory = (req, res, next) => {
         res.status(200).json({
             status: resolved.status,
             message: resolved.message,
-            data: {files: resolved.data.files
-                .map(file=>({Key: file.Key,
-                 LastModified:file.LastModified,
-                 Size:file.Size})) }
+            data: {
+                files: resolved.data.files
+                    .map(file => ({
+                        Key: file.Key,
+                        LastModified: file.LastModified,
+                        Size: file.Size
+                    }))
+            }
         });
     }, rejected => {
         console.error(rejected);
@@ -69,3 +74,23 @@ exports.deleteStorageBackups = (req, res, next) => {
     });
 }
 
+exports.ping = (req, res, next) => {
+    pingServer(process.env.LOCALHOST, process.env.LOCALPORT, 5000)
+        .then((isActive) => {
+            const message = `Server status is ${isActive ? 'active' : 'inactive'}!`;
+            console.log(message);
+            res.status(200).json({
+
+                status:'success',
+                message
+            });
+        })
+        .catch(() => {
+            const message = 'Server is not responding!';
+            console.log(message);
+            res.status(500).json({
+                status: 'error',
+                message
+            });
+        });
+}

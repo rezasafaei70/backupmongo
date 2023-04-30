@@ -1,12 +1,11 @@
 
-const { AWSSetup, delete_fileRows, upload_file, logFilePath, config } = require('./utils/appConfig');
-const AppError = require('./utils/appError');
+const { config, AWSSetup, delete_fileRows, upload_file, logFilePath } = require('./utils/appConfig');
 
 //? delete files in the storage
 const deleteStorageBackups = exports.deleteStorageBackups = (objectsToDelete) => {
 
     //?config aws setup
-    let s3 = AWSSetup(config);
+    let s3 = AWSSetup();
 
     //? the sample of objects to delete
     // const objectsToDelete = [
@@ -40,7 +39,7 @@ const deleteStorageBackups = exports.deleteStorageBackups = (objectsToDelete) =>
 //? get storage files
 const getFilesInDirectory = exports.getFilesInDirectory = () => {
     //?config aws setup
-    let s3 = AWSSetup(config);
+    let s3 = AWSSetup();
 
     //?get list of objects
     return new Promise((resolve, reject) => {
@@ -68,7 +67,7 @@ const getFilesInDirectory = exports.getFilesInDirectory = () => {
 
 //? delete files in the storage a few days ago, then update the log file and upload that to the storage
 exports.deleteStorageBackupsByDate = () => {
-   // return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
         //? getall files from storage
         getFilesInDirectory().then((getFilesInDirectoryResponse) => {
             if (getFilesInDirectoryResponse.data.files.length === 0) {
@@ -102,7 +101,7 @@ exports.deleteStorageBackupsByDate = () => {
                     delete_fileRows(logFilePath, filteredObjects.map((file) => file.Key))
                         .then((response) => {
                             //?upload log text file on the storage
-                            upload_file(config, logFilePath).then((res) => {
+                            upload_file(logFilePath).then((res) => {
                                 resolve({
                                     error: 0,
                                     status: 'success',
@@ -121,5 +120,5 @@ exports.deleteStorageBackupsByDate = () => {
             .catch((error) => {
                 return reject(error);
             });
-   //});
+    });
 }

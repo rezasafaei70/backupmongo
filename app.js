@@ -10,6 +10,7 @@ const app = express();
 
 const restoreRouter = require('./routes/restoreRoutes');
 const backupRouter = require('./routes/backupRoutes');
+const pingRouter = require('./routes/pingRoutes');
 
 
 app.use(express.json());
@@ -24,6 +25,7 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
+app.use('/api/v1/ping', pingRouter);
 app.use('/api/v1/restore', restoreRouter);
 app.use('/api/v1/backup', backupRouter);
 
@@ -33,7 +35,7 @@ app.all('*', (req, res, next) => {
   next(new AppError(`The ${req.originalUrl} can not find on this server!`, 404));
 });
 
-const port = process.env.LocalPORT || 3000;
+const port = process.env.LOCALPORT || 3000;
 const server = app.listen(port, () => {
   console.log(`App runnig on port ${port}...`);
 });

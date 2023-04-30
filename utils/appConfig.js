@@ -38,7 +38,7 @@ const config = exports.config = {
 
 // Checks provided Configuration, Rejects if important keys from config are
 // missing
-exports.ValidateConfig = (config) => {
+exports.validateConfig = () => {
 
     if (config && config.mongodb && config.s3 && config.s3.accessKey && config.s3.secretKey && config.s3.endpoint && config.s3.bucketName) {
         let mongodb;
@@ -96,7 +96,7 @@ exports.ValidateConfig = (config) => {
     return false;
 }
 
-const AWSSetup = exports.AWSSetup = (config) => {
+const AWSSetup = exports.AWSSetup = () => {
 
     AWS
         .config

@@ -1,9 +1,8 @@
 const backup = require('./../backup');
 const storageHandler = require('./../storageHandler');
-const {config} = require('./../utils/appConfig');
 
 exports.backupDB = (req, res, next) => {
-    backup(config).then(resolved => {        
+    backup().then(resolved => {        
         res.status(200).json({
             status: resolved.status,
             message: resolved.message

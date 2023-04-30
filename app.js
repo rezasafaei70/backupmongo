@@ -11,6 +11,9 @@ const app = express();
 const restoreRouter = require('./routes/restoreRoutes');
 const backupRouter = require('./routes/backupRoutes');
 
+
+app.use(express.json());
+
 //console.log(process.env)
 
 //limit requests from same api

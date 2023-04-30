@@ -1,6 +1,6 @@
 const backup = require('./../backup');
 const storageHandler = require('./../storageHandler');
-const pingServer = require('./../utils/pingServer')
+const pingServer = require('./../utils/pingServer');
 
 exports.backupDB = (req, res, next) => {
     backup().then(resolved => {
@@ -81,7 +81,7 @@ exports.ping = (req, res, next) => {
             console.log(message);
             res.status(200).json({
 
-                status:'success',
+                status: 'success',
                 message
             });
         })
@@ -93,4 +93,35 @@ exports.ping = (req, res, next) => {
                 message
             });
         });
+}
+
+exports.getFileFromStorage = (req, res, next) => {
+
+    const key = req.params.name;
+    if (!key) {
+        res.status(400).json({
+            status: 'fail',
+            message: 'The input information is invalid!'
+        });
+    }
+
+    storageHandler.getSignedFileUrl(key).then(resolved => {
+        res.status(200).json({
+            status: resolved.status,
+            message: resolved.message,
+            data: resolved.data
+        })
+    }, rejected => {
+        console.error(rejected);
+        res.status(rejected.statusCode).json({
+            status: rejected.status,
+            message: rejected.message
+        });
+    }).catch(err => {
+        console.error(err);
+        res.status(500).json({
+            status: 'error',
+            message: err.message
+        });
+    });
 }

@@ -9,4 +9,8 @@ router
   .get(backupController.directory)
   .delete(backupController.deleteStorageBackups);
 
+  router
+  .route('/:name')
+  .get(backupController.getFileFromStorage);
+
 module.exports = router;

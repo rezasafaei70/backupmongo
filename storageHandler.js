@@ -122,3 +122,43 @@ exports.deleteStorageBackupsByDate = () => {
             });
     });
 }
+
+//? get file url with authentication header, for client download it
+exports.getSignedFileUrl = (key) => {
+
+    return new Promise((resolve, reject) => {
+
+        if(!key){
+            return reject({
+                error: 1,
+                status: 'fail',
+                statusCode: 400,
+                message: 'The input information is invalid!'
+            });
+        }
+
+        let s3 = AWSSetup();
+        const params = {
+            Bucket: process.env.BUCKETNAME,
+            Key:key
+        };
+
+        s3.getSignedUrlPromise('getObject', params)
+            .then(url => {
+                resolve({
+                    error: 0,
+                    status: 'success',
+                    message: 'The URL was received successfully!',
+                    data: { url }
+                });
+            })
+            .catch(err => {
+                return reject({
+                    error: 1,
+                    status: 'error',
+                    statusCode: 500,
+                    message: err.message
+                });
+            });
+    });
+}

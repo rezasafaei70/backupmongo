@@ -54,7 +54,7 @@ const restoreMongoDatabase = (ZIP_NAME) => {
                         } else {
                             resolve({
                                 error: 0,
-                                status:'success',
+                                status: 'success',
                                 message: "Successfuly Created Restore",
                                 backupName: ZIP_NAME
                             });
@@ -155,7 +155,7 @@ const downloadFileFromS3 = (S3, ZIP_NAME) => {
         });
 
         stream.on('error', (err) => {
-            if(err.code === "NoSuchKey"){
+            if (err.code === "NoSuchKey") {
                 return reject({
                     error: 1,
                     status: 'fail',
@@ -199,7 +199,7 @@ const downloadBackup = (ZIP_NAME) => {
 //? then the current database is deleted,
 //? and finally the received file is restored.
 
-const downloadAndRestore = (ZIP_NAME) => {
+exports.restore = (ZIP_NAME) => {
     // Check if the configuration is valid
     let isValidConfig = validateConfig();
     if (isValidConfig) {
@@ -224,4 +224,22 @@ const downloadAndRestore = (ZIP_NAME) => {
     }
 }
 
-module.exports = downloadAndRestore;
+exports.restoreFromLocalCopy = (ZIP_NAME) => {
+    // Check if the configuration is valid
+    let isValidConfig = validateConfig();
+    if (isValidConfig) {
+        // delete current db and restore 
+        return restoreMongoDatabase(ZIP_NAME).then(restoreMongoDatabaseResponse => {
+            return Promise.resolve(restoreMongoDatabaseResponse);
+        }, restoreMongoDatabaseError => {
+            return Promise.reject(restoreMongoDatabaseError);
+        });
+    } else {
+        return Promise.reject({
+            error: 1,
+            status: 'fail',
+            statusCode: 400,
+            message: "Invalid Configuration"
+        });
+    }
+}

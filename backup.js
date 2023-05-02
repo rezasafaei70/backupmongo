@@ -2,109 +2,24 @@
 
 const path = require('path'),
     fs = require('fs'),
-    exec = require('child_process').exec,
-    os = require('os'),
-    moment = require('moment'),
-    AWS = require('aws-sdk'),
-    MongodbURI = require('mongodb-uri'),
-    PROJECT_ROOT = process
-        .mainModule
-        .paths[0]
-        .split("node_modules")[0];
+    exec = require('child_process').exec;
 
-let BACKUP_PATH = (ZIP_NAME) => path.resolve(os.tmpdir(), ZIP_NAME);
+const { config, BACKUP_PATH,logFilePath,
+        AWSSetup, validateConfig, currentTime,
+        upload_file, write_file } = require('./utils/appConfig');
 
-// Checks provided Configuration, Rejects if important keys from config are
-// missing
-function ValidateConfig(config) {
 
-    if (config && config.mongodb && config.s3 && config.s3.accessKey && config.s3.secretKey && config.s3.endpoint && config.s3.bucketName) {
-        let mongodb;
-
-        if (typeof config.mongodb == "string") {
-
-            mongodb = MongodbURI.parse(config.mongodb);
-        } else {
-
-            if (config.mongodb.database && config.mongodb.host && config.mongodb.port) {
-
-                mongodb = {
-                    scheme: 'mongodb',
-                    username: config.mongodb.username || null,
-                    password: config.mongodb.password || null,
-                    database: config.mongodb.database,
-                    hosts: [{
-                        host: config.mongodb.host,
-                        port: config.mongodb.port
-                    }]
-                };
-            }
-            else if (config.mongodb.database && config.mongodb.hosts[0].host && config.mongodb.hosts[0].port) {
-
-                mongodb = {
-                    scheme: 'mongodb',
-                    username: config.mongodb.username || null,
-                    password: config.mongodb.password || null,
-                    database: config.mongodb.database,
-                    hosts: [{
-                        host: config.mongodb.hosts[0].host,
-                        port: config.mongodb.hosts[0].port
-                    }]
-                };
-            }
-            else {
-
-                return false;
-            }
-        }
-        if (config.keepLocalBackups) {
-            fs.mkdir(path.resolve(PROJECT_ROOT, mongodb.database), err => {
-                if (err) {
-                    // Do nothing
-                }
-            });
-            BACKUP_PATH = (ZIP_NAME) => path.resolve(PROJECT_ROOT, mongodb.database, ZIP_NAME);
-        }
-
-        // Replace Connection URI with parsed output from mongodb-uri
-        config.mongodb = mongodb;
-        console.log(config.mongodb);
-        return true;
-    }
-    return false;
-}
-
-function AWSSetup(config) {
-
-    AWS
-        .config
-        .update({
-            accessKeyId: config.s3.accessKey,
-            secretAccessKey: config.s3.secretKey,
-            endpoint: config.s3.endpoint
-        });
-
-    return new AWS.S3();
-}
-
-// Gets current time If Timezoneoffset is provided, then it'll get time in that
-// time zone If no timezone is provided, then it gives UTC Time
-function currentTime(timezoneOffset) {
-    if (timezoneOffset) {
-        return moment(moment(moment.now()).utcOffset(timezoneOffset, true).toDate()).format("YYYY-MM-DDTHH-mm-ss");
-    } else {
-        return moment
-            .utc()
-            .format('YYYY-MM-DDTHH-mm-ss');
-    }
-}
-
-function BackupMongoDatabase(config) {
+const backupMongoDatabase=()=>{
 
     // Backups are stored in .tmp directory in Project root
     fs.mkdir(path.resolve(".tmp"), (err) => {
         if (err && err.code != "EEXIST") {
-            return Promise.reject(err);
+            return Promise.reject({
+                error: 1,
+                status: 'fail',
+                statusCode: 400,
+                message: err.message
+            });
         }
     });
 
@@ -136,11 +51,14 @@ function BackupMongoDatabase(config) {
                 // Most likely, mongodump isn't installed or isn't accessible
                 reject({
                     error: 1,
+                    status: 'fail',
+                    statusCode: 400,
                     message: err.message
                 });
             } else {
                 resolve({
                     error: 0,
+                    status:'success',
                     message: "Successfuly Created Backup",
                     backupName: DB_BACKUP_NAME
                 });
@@ -149,15 +67,22 @@ function BackupMongoDatabase(config) {
     });
 }
 
-function DeleteLocalBackup(ZIP_NAME) {
+
+const deleteLocalBackup=(ZIP_NAME)=>{
 
     return new Promise((resolve, reject) => {
         fs.unlink(BACKUP_PATH(ZIP_NAME), (err) => {
             if (err) {
-                reject(err);
+                reject({
+                    error: 1,
+                    status: 'fail',
+                    statusCode: 400,
+                    message: err.message
+                });
             } else {
                 resolve({
                     error: 0,
+                    status:'success',
                     message: "Deleted Local backup",
                     zipName: ZIP_NAME
                 });
@@ -168,7 +93,7 @@ function DeleteLocalBackup(ZIP_NAME) {
 
 // S3 Utils Used to check if provided bucket exists If it does not exists then
 // it can create one, and then use it.  Also used to upload File
-function CreateBucket(S3, config) {
+const createBucket=(S3)=>{
 
     const bucketName = config.s3.bucketName,
         accessPerm = config.s3.accessPerm,
@@ -185,12 +110,15 @@ function CreateBucket(S3, config) {
             if (err) {
                 reject({
                     error: 1,
+                    status: 'fail',
+                    statusCode: 400,
                     message: err.message,
                     code: err.code
                 });
             } else {
                 resolve({
                     error: 0,
+                    status:'success',
                     url: data.Location,
                     message: 'Sucessfully created Bucket'
                 });
@@ -199,13 +127,16 @@ function CreateBucket(S3, config) {
     });
 }
 
-function UploadFileToS3(S3, ZIP_NAME, config) {
+
+const uploadFileToS3=(S3, ZIP_NAME)=>{
     return new Promise((resolve, reject) => {
         let fileStream = fs.createReadStream(BACKUP_PATH(ZIP_NAME));
 
         fileStream.on('error', err => {
             return reject({
                 error: 1,
+                status: 'fail',
+                statusCode: 400,
                 message: err.message
             });
         });
@@ -220,6 +151,8 @@ function UploadFileToS3(S3, ZIP_NAME, config) {
             if (err) {
                 return reject({
                     error: 1,
+                    status: 'fail',
+                    statusCode: 400,
                     message: err.message,
                     code: err.code
                 });
@@ -227,15 +160,18 @@ function UploadFileToS3(S3, ZIP_NAME, config) {
 
             if (!config.keepLocalBackups) {
                 //  Not supposed to keep local backups, so delete the one that was just uploaded
-                DeleteLocalBackup(ZIP_NAME).then(deleteLocalBackupResult => {
+                deleteLocalBackup(ZIP_NAME).then(deleteLocalBackupResult => {
                     resolve({
                         error: 0,
+                        status: 'success',
                         message: "Upload Successful, Deleted Local Copy of Backup",
                         data: data
                     });
                 }, deleteLocalBackupError => {
                     resolve({
                         error: 1,
+                        status: 'fail',
+                        statusCode: 400,
                         message: deleteLocalBackupError,
                         data: data
                     });
@@ -262,6 +198,7 @@ function UploadFileToS3(S3, ZIP_NAME, config) {
 
                 resolve({
                     error: 0,
+                    status:'success',
                     message: "Upload Successful",
                     data: data
                 });
@@ -270,16 +207,17 @@ function UploadFileToS3(S3, ZIP_NAME, config) {
     });
 }
 
-function UploadBackup(config, backupResult) {
-    let s3 = AWSSetup(config);
 
-    return UploadFileToS3(s3, backupResult.zipName, config).then(uploadFileResult => {
+const uploadBackup=(backupResult)=>{
+    let s3 = AWSSetup();
+
+    return uploadFileToS3(s3, backupResult.zipName).then(uploadFileResult => {
         return Promise.resolve(uploadFileResult);
     }, uploadFileError => {
         if (uploadFileError.code === "NoSuchBucket") {
             // Bucket Does not exists, So Create one, And Reattempt to Upload
-            return CreateBucket(s3, config).then(createBucketResolved => {
-                return UploadFileToS3(s3, backupResult.zipName, config).then(uploadFileResult => {
+            return createBucket(s3).then(createBucketResolved => {
+                return uploadFileToS3(s3, backupResult.zipName).then(uploadFileResult => {
                     return Promise.resolve(uploadFileResult);
                 }, uploadFileError => {
                     return Promise.reject(uploadFileError);
@@ -293,11 +231,12 @@ function UploadBackup(config, backupResult) {
     });
 }
 
-function CreateBackup(config) {
+const createBackup=()=>{
     // Backup Mongo Database
-    return BackupMongoDatabase(config).then(result => {
+    return backupMongoDatabase().then(result => {
         return Promise.resolve({
             error: 0,
+            status:'success',
             message: "Successfully Created Compressed Archive of Database",
             zipName: result.backupName
         });
@@ -306,16 +245,29 @@ function CreateBackup(config) {
     });
 }
 
-function BackupAndUpload(config) {
+
+const backupAndUpload=()=>{
     // Check if the configuration is valid
-    let isValidConfig = ValidateConfig(config);
+    let isValidConfig = validateConfig();
 
     if (isValidConfig) {
         // Create a backup of database
-        return CreateBackup(config).then(backupResult => {
+        return createBackup().then(backupResult => {
             // Upload it to S3
-            return UploadBackup(config, backupResult).then(res => {
-                return Promise.resolve(res);
+            return uploadBackup(backupResult).then(uploadBackupResponse => {
+                //Write log file
+                return write_file(logFilePath, uploadBackupResponse).then(writeFileResponse => {
+                    console.log(writeFileResponse);
+                    //Upload log file
+                    return upload_file(logFilePath).then(uploadLogFileResponse => {
+                        console.log(uploadLogFileResponse);
+                        return Promise.resolve(uploadBackupResponse);
+                    }, err => {
+                        return Promise.reject(err);
+                    });
+                }, err => {
+                    return Promise.reject(err);
+                });
             }, err => {
                 return Promise.reject(err);
             });
@@ -325,9 +277,11 @@ function BackupAndUpload(config) {
     } else {
         return Promise.reject({
             error: 1,
+            status: 'fail',
+            statusCode: 400,
             message: "Invalid Configuration"
         });
     }
 }
 
-module.exports = BackupAndUpload;
+module.exports = backupAndUpload;

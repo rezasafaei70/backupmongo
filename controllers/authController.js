@@ -9,23 +9,31 @@ const signToken = (user) => {
 };
 
 const createSendToken = (user, statusCode, res) => {
-    const token = signToken(user);
+    try {
+        const token = signToken(user);
 
-    const cookieOptions = {
-        expires: new Date(
-            Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
-        ),
-        httpOnly: true,
-    };
+        const cookieOptions = {
+            expires: new Date(
+                Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+            ),
+            httpOnly: true,
+        };
 
-    if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+        if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
 
-    res.cookie('jwt', token, cookieOptions);
+        res.cookie('jwt', token, cookieOptions);
 
-    res.status(statusCode).json({
-        status: 'success',
-        token
-    });
+        return res.status(statusCode).json({
+            status: 'success',
+            token
+        });
+    }
+    catch (err) {
+        return res.status(500).json({
+            status: 'error',
+            message: err.message
+        });
+    }
 };
 
 exports.signin = (req, res, next) => {
@@ -87,7 +95,7 @@ exports.protect = async (req, res, next) => {
             password: process.env.API_PASSWORD
         };
 
-        if (user.username !== decoded.username || user.password != decoded.password ) {
+        if (user.username !== decoded.username || user.password != decoded.password) {
             return res.status(401).json({
                 status: 'fail',
                 message: 'the user belonging to this token does no longer exist!'

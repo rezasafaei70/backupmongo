@@ -7,53 +7,62 @@ const { encrypt, decrypt } = require('../utils/appEncryptor');
 const uploadBackupFile = uploadMiddleware.single('file');
 
 exports.restoreDB = (req, res, next) => {
+    try {
+        const key = req.body.fileName;
 
-    const key = req.body.fileName;
+        if (!key) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'The input information is invalid!'
+            });
+        }
 
-    if (!key) {
-        res.status(400).json({
-            status: 'fail',
-            message: 'The input information is invalid!'
-        });
+        if (path.extname(key) !== '.gz') {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'File does not have .gz extension!'
+            });
+        }
+
+        restore(key).then(resolved => {
+            return res.status(200).json({
+                status: 'success',
+                message: resolved.message
+            });
+        }, rejected => {
+            console.error(rejected);
+            return res.status(rejected.statusCode).json({
+                status: rejected.status,
+                message: rejected.message
+            });
+        }).catch(err => {
+            console.error(err);
+            return res.status(500).json({
+                status: 'error',
+                message: err.message
+            });
+        })
     }
-
-    if (path.extname(key) !== '.gz') {
-        res.status(400).json({
-            status: 'fail',
-            message: 'File does not have .gz extension!'
-        });
-    }
-
-    restore(key).then(resolved => {
-        res.status(200).json({
-            status: 'success',
-            message: resolved.message
-        });
-    }, rejected => {
-        console.error(rejected);
-        res.status(rejected.statusCode).json({
-            status: rejected.status,
-            message: rejected.message
-        });
-    }).catch(err => {
+    catch (err) {
         console.error(err);
-        res.status(500).json({
+        return res.status(500).json({
             status: 'error',
             message: err.message
         });
-    })
+    }
 }
 
 exports.restoreDBFromLocalCopy = (req, res, next) => {
+    try{
     uploadBackupFile(req, res, function (err) {
         if (err) {
-            res.status(400).json({
+            return res.status(400).json({
                 status: 'fail',
                 message: err.message
             });
         }
         else if (!req.file) {
-            res.status(400).json({
+            return res.status(400).json({
                 status: 'fail',
                 message: 'Please upload a file!'
             });
@@ -61,26 +70,33 @@ exports.restoreDBFromLocalCopy = (req, res, next) => {
         else {
             restoreFromLocalCopy(req.file.originalname)
                 .then(resolved => {
-                    res.status(200).json({
+                    return res.status(200).json({
                         status: 'success',
                         message: resolved.message
                     });
                 }, rejected => {
                     console.error(rejected);
-                    res.status(rejected.statusCode).json({
+                    return res.status(rejected.statusCode).json({
                         status: rejected.status,
                         message: rejected.message
                     });
                 }).catch(err => {
                     console.error(err);
-                    res.status(500).json({
+                    return res.status(500).json({
                         status: 'error',
                         message: err.message
                     });
                 });
         }
     });
-
+}
+catch (err) {
+    console.error(err);
+    return res.status(500).json({
+        status: 'error',
+        message: err.message
+    });
+}
 }
 
 exports.permissionRestorer = (req, res, next) => {
@@ -102,6 +118,7 @@ exports.permissionRestorer = (req, res, next) => {
 
         next();
     } catch (err) {
+        console.error(err);
         return res.status(500).json({
             status: 'error',
             message: err.message

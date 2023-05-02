@@ -13,9 +13,7 @@ const backupRouter = require('./routes/backupRoutes');
 const pingRouter = require('./routes/pingRoutes');
 const userRoutes = require('./routes/userRoutes');
 
-
 app.use(express.json());
-
 //console.log(process.env)
 
 //limit requests from same api
@@ -42,17 +40,11 @@ const server = app.listen(port, () => {
   console.log(`App runnig on port ${port}...`);
 });
 
+//? This event is emitted when an unhandled exception occurs
+process.on('uncaughtException', (err) => {
+  console.log(err.name, err.message);
+  console.log('uncought exception...');
+});
+
 backupScheduler.initialBackup();
 backupScheduler.automatedBackup();
-
-//restore(config, 'P67HiqS8lshD8_2023-04-26T10-24-51.gz')
-//.then(resolved => {
-//  console.log(resolved);
-// }, rejected => {
-//   console.error(rejected);
-// });
-
-// process.on('unhandledRejection', (err) => {
-//   console.log(err.name, err.message);
-//   console.log('unhandled rejection promise. shutting down server...');
-// });

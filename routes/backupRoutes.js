@@ -1,16 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const backupController = require('./../controllers/backupController')
+const authController = require('../controllers/authController');
+const backupController = require('./../controllers/backupController');
 
 //root route
 router
   .route('/')
-  .post(backupController.backupDB)
-  .get(backupController.directory)
-  .delete(backupController.deleteStorageBackups);
+  .post(authController.protect, backupController.backupDB)
+  .get(authController.protect, backupController.directory)
+  .delete(authController.protect, backupController.deleteStorageBackups);
 
-  router
+router
   .route('/:name')
-  .get(backupController.getFileFromStorage);
+  .get(authController.protect, backupController.getFileFromStorage);
 
 module.exports = router;

@@ -11,6 +11,7 @@ const app = express();
 const restoreRouter = require('./routes/restoreRoutes');
 const backupRouter = require('./routes/backupRoutes');
 const pingRouter = require('./routes/pingRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 
 app.use(express.json());
@@ -28,6 +29,7 @@ app.use('/api', limiter);
 app.use('/api/v1/ping', pingRouter);
 app.use('/api/v1/restore', restoreRouter);
 app.use('/api/v1/backup', backupRouter);
+app.use('/api/v1/users', userRoutes);
 
 app.use(create_dir);
 

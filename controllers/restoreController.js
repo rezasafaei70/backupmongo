@@ -1,5 +1,4 @@
 const path = require('path');
-const crypto = require('crypto');
 
 const { restore, restoreFromLocalCopy } = require('./../restore');
 const uploadMiddleware = require('./../utils/uploadMiddleware');

@@ -67,6 +67,16 @@ const getFilesInDirectory = exports.getFilesInDirectory = () => {
 
 //? delete files in the storage a few days ago, then update the log file and upload that to the storage
 exports.deleteStorageBackupsByDate = () => {
+
+    if (!config.deleteStorageBackups) {
+        return Promise.reject({
+            error: 1,
+            status: 'fail',
+            statusCode: 400,
+            message: "The settings for deleting backups on storage are disabled!"
+        });
+    }
+
     return new Promise((resolve, reject) => {
         //? getall files from storage
         getFilesInDirectory().then((getFilesInDirectoryResponse) => {
@@ -93,7 +103,9 @@ exports.deleteStorageBackupsByDate = () => {
             //? delete files from storage
             deleteStorageBackups(filteredObjects)
                 .then((deleteStorageBackupsResponse) => {
-                    if (deleteStorageBackupsResponse.data.files.length === 0) {
+
+                    const length = deleteStorageBackupsResponse.data.files.length;
+                    if (length === 0) {
                         return reject(deleteStorageBackupsResponse);
                     }
 
@@ -104,6 +116,7 @@ exports.deleteStorageBackupsByDate = () => {
                             upload_file(logFilePath).then((res) => {
                                 resolve({
                                     error: 0,
+                                    data: { length },
                                     status: 'success',
                                     message: "upload the log file was done successfully after deleting the files!"
                                 });
@@ -128,7 +141,7 @@ exports.getSignedFileUrl = (key) => {
 
     return new Promise((resolve, reject) => {
 
-        if(!key){
+        if (!key) {
             return reject({
                 error: 1,
                 status: 'fail',
@@ -140,7 +153,7 @@ exports.getSignedFileUrl = (key) => {
         let s3 = AWSSetup();
         const params = {
             Bucket: process.env.BUCKETNAME,
-            Key:key
+            Key: key
         };
 
         s3.getSignedUrlPromise('getObject', params)

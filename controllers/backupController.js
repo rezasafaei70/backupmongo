@@ -26,16 +26,20 @@ exports.backupDB = (req, res, next) => {
 
 exports.directory = (req, res, next) => {
     storageHandler.getFilesInDirectory().then(resolved => {
+
+        const files = resolved.data.files
+            .map(file => ({
+                Key: file.Key,
+                LastModified: file.LastModified,
+                Size: file.Size
+            }));
+
         res.status(200).json({
             status: resolved.status,
             message: resolved.message,
             data: {
-                files: resolved.data.files
-                    .map(file => ({
-                        Key: file.Key,
-                        LastModified: file.LastModified,
-                        Size: file.Size
-                    }))
+                files,
+                length: files.length
             }
         });
     }, rejected => {
@@ -57,7 +61,8 @@ exports.deleteStorageBackups = (req, res, next) => {
     storageHandler.deleteStorageBackupsByDate().then(resolved => {
         res.status(200).json({
             status: resolved.status,
-            message: resolved.message
+            message: resolved.message,
+            data:resolved.data
         });
     }, rejected => {
         console.error(rejected);

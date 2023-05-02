@@ -5,11 +5,15 @@ const restoreController = require('./../controllers/restoreController')
 //root route
 router
   .route('/')
-  .post(restoreController.restoreDB);
+  .post(restoreController.permissionRestorer, restoreController.restoreDB);
 
-  router
+router
   .route('/local')
-  .post(restoreController.restoreDBFromLocalCopy);
+  .post(restoreController.permissionRestorer, restoreController.restoreDBFromLocalCopy);
+
+router
+  .route('/key')
+  .post(restoreController.generateKey);
 
 
 module.exports = router;

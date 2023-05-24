@@ -53,50 +53,50 @@ exports.restoreDB = (req, res, next) => {
 }
 
 exports.restoreDBFromLocalCopy = (req, res, next) => {
-    try{
-    uploadBackupFile(req, res, function (err) {
-        if (err) {
-            return res.status(400).json({
-                status: 'fail',
-                message: err.message
-            });
-        }
-        else if (!req.file) {
-            return res.status(400).json({
-                status: 'fail',
-                message: 'Please upload a file!'
-            });
-        }
-        else {
-            restoreFromLocalCopy(req.file.originalname)
-                .then(resolved => {
-                    return res.status(200).json({
-                        status: 'success',
-                        message: resolved.message
-                    });
-                }, rejected => {
-                    console.error(rejected);
-                    return res.status(rejected.statusCode).json({
-                        status: rejected.status,
-                        message: rejected.message
-                    });
-                }).catch(err => {
-                    console.error(err);
-                    return res.status(500).json({
-                        status: 'error',
-                        message: err.message
-                    });
+    try {
+        uploadBackupFile(req, res, function (err) {
+            if (err) {
+                return res.status(400).json({
+                    status: 'fail',
+                    message: err.message
                 });
-        }
-    });
-}
-catch (err) {
-    console.error(err);
-    return res.status(500).json({
-        status: 'error',
-        message: err.message
-    });
-}
+            }
+            else if (!req.file) {
+                return res.status(400).json({
+                    status: 'fail',
+                    message: 'Please upload a file!'
+                });
+            }
+            else {
+                restoreFromLocalCopy(req.file.originalname)
+                    .then(resolved => {
+                        return res.status(200).json({
+                            status: 'success',
+                            message: resolved.message
+                        });
+                    }, rejected => {
+                        console.error(rejected);
+                        return res.status(rejected.statusCode).json({
+                            status: rejected.status,
+                            message: rejected.message
+                        });
+                    }).catch(err => {
+                        console.error(err);
+                        return res.status(500).json({
+                            status: 'error',
+                            message: err.message
+                        });
+                    });
+            }
+        });
+    }
+    catch (err) {
+        console.error(err);
+        return res.status(500).json({
+            status: 'error',
+            message: err.message
+        });
+    }
 }
 
 exports.permissionRestorer = (req, res, next) => {
@@ -109,7 +109,7 @@ exports.permissionRestorer = (req, res, next) => {
             });
         }
         //?check permission for restore db
-        else if (decrypt(key) !== process.env.key) {
+        else if (decrypt(key) !== process.env.API_KEY) {
             return res.status(403).json({
                 status: 'fail',
                 message: 'you dont have permission to perform this action!'
@@ -128,7 +128,7 @@ exports.permissionRestorer = (req, res, next) => {
 
 exports.generateKey = (req, res, next) => {
     try {
-        const hash = encrypt(process.env.KEY);
+        const hash = encrypt(process.env.API_KEY);
 
         if (!hash) {
             return res.status(400).json({

@@ -38,12 +38,12 @@ const createSendToken = (user, statusCode, res) => {
 
 exports.signin = (req, res, next) => {
     try {
-        //? 1. check email and password exist
+        //? 1. check username and password exist
         const { username, password } = req.body;
         if (!username || !password) {
             return res.status(400).json({
                 status: 'fail',
-                message: 'please provide your email and password!'
+                message: 'please provide your username and password!'
             });
         }
         //? 2. check user exist and password is correct

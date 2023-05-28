@@ -1,10 +1,14 @@
 
 const express = require('express');
 const rateLimit = require('express-rate-limit');
-const dotenv = require('dotenv').config({ path: './config.env' });
-const backupScheduler= require('./backupScheduler');
+
+if (process.env.NODE_ENV !== 'production') {
+  const dotenv = require('dotenv').config({ path: './.env.save' });
+}
+
+const backupScheduler = require('./backupScheduler');
 const AppError = require('./utils/appError');
-const {create_dir}= require('./utils/appConfig');
+const { create_dir } = require('./utils/appConfig');
 
 const app = express();
 

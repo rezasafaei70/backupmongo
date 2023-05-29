@@ -18,4 +18,4 @@ RUN dpkg -i ./mongodb-database-tools-ubuntu2004-x86_64-100.6.1.deb
 COPY . .
 
 EXPOSE 8080
-CMD [ "pm2-runtime","start", "BackupAndUpload.js" ]
+CMD [ "pm2-runtime","start", "app.js" ]

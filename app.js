@@ -8,7 +8,6 @@ if (process.env.NODE_ENV !== 'production') {
 
 const backupScheduler = require('./backupScheduler');
 const AppError = require('./utils/appError');
-const { create_dir } = require('./utils/appConfig');
 
 const app = express();
 
@@ -32,8 +31,6 @@ app.use('/api/v1/ping', pingRouter);
 app.use('/api/v1/restore', restoreRouter);
 app.use('/api/v1/backup', backupRouter);
 app.use('/api/v1/users', userRoutes);
-
-app.use(create_dir);
 
 app.all('*', (req, res, next) => {
   next(new AppError(`The ${req.originalUrl} can not find on this server!`, 404));

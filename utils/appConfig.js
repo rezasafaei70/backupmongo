@@ -33,8 +33,8 @@ const config = exports.config = {
     keepLocalBackups: false, //If true, It'll create a folder in project root with database's name and store backups in it and if it's false, It'll use temporary directory of OS.
     noOfLocalBackups: 2, //This will only keep the most recent 5 backups and delete all older backups from local backup directory
     timezoneOffset: 300, //Timezone, Used in naming backups, It is assumed to be in hours if less than 16 and in minutes otherwise
-  
-    deleteStorageBackups : process.env.DELETE_STORAGE_BACKUPS === 'true', //Enable or Disable
+
+    deleteStorageBackups: process.env.DELETE_STORAGE_BACKUPS === 'true', //Enable or Disable
     daysAgoDeleteStorageBackups: process.env.DAYS_AGO_DELETE_STORAGE_BACKUPS  //Deleting backups of a few days ago on Storage
 };
 
@@ -93,6 +93,8 @@ exports.validateConfig = () => {
         // Replace Connection URI with parsed output from mongodb-uri
         config.mongodb = mongodb;
         console.log(config.mongodb);
+        create_dir();
+
         return true;
     }
     return false;
@@ -123,8 +125,8 @@ exports.currentTime = (timezoneOffset) => {
     }
 }
 
-exports.create_dir = () => {
-    var dir = `./database/temp/`;
+const create_dir = exports.create_dir = () => {
+    var dir = `${PROJECT_ROOT}/database/temp/`;
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, {
             recursive: true

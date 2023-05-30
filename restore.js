@@ -44,12 +44,13 @@ const restoreMongoDatabase = (ZIP_NAME) => {
 
                     exec(command, (err, stdout, stderr) => {
                         if (err) {
-                            // Most likely, mongodump isn't installed or isn't accessible
+                            // Most likely, mongorestore isn't installed or isn't accessible
+                            console.error(err.message);
                             reject({
                                 error: 1,
                                 status: 'fail',
                                 statusCode: 400,
-                                message: err.message
+                                message: "It is not possible to execute the restore command"
                             });
                         } else {
                             resolve({
@@ -95,11 +96,12 @@ const deleteMongoDatabase = () => {
     return new Promise((resolve, reject) => {
         exec(command, (err, stdout, stderr) => {
             if (err) {
+                console.error(err.message);
                 reject({
                     error: 1,
                     status: 'fail',
                     statusCode: 400,
-                    message: err.message
+                    message: "It is not possible to execute the delete command"
                 });
             } else {
                 resolve({

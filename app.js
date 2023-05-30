@@ -3,7 +3,7 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 
 if (process.env.NODE_ENV !== 'production') {
-  const dotenv = require('dotenv').config({ path: './.env.save' });
+  const dotenv = require('dotenv').config({ path: './.env.save.example' });
 }
 
 const backupScheduler = require('./backupScheduler');

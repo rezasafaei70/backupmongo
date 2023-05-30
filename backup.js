@@ -4,12 +4,12 @@ const path = require('path'),
     fs = require('fs'),
     exec = require('child_process').exec;
 
-const { config, BACKUP_PATH,logFilePath,
-        AWSSetup, validateConfig, currentTime,
-        upload_file, write_file } = require('./utils/appConfig');
+const { config, BACKUP_PATH, logFilePath,
+    AWSSetup, validateConfig, currentTime,
+    upload_file, write_file } = require('./utils/appConfig');
 
 
-const backupMongoDatabase=()=>{
+const backupMongoDatabase = () => {
 
     // Backups are stored in .tmp directory in Project root
     fs.mkdir(path.resolve(".tmp"), (err) => {
@@ -49,16 +49,17 @@ const backupMongoDatabase=()=>{
         exec(command, (err, stdout, stderr) => {
             if (err) {
                 // Most likely, mongodump isn't installed or isn't accessible
+                console.error(err.message);
                 reject({
                     error: 1,
                     status: 'fail',
                     statusCode: 400,
-                    message: err.message
+                    message: "It is not possible to execute the backup command",
                 });
             } else {
                 resolve({
                     error: 0,
-                    status:'success',
+                    status: 'success',
                     message: "Successfuly Created Backup",
                     backupName: DB_BACKUP_NAME
                 });
@@ -68,7 +69,7 @@ const backupMongoDatabase=()=>{
 }
 
 
-const deleteLocalBackup=(ZIP_NAME)=>{
+const deleteLocalBackup = (ZIP_NAME) => {
 
     return new Promise((resolve, reject) => {
         fs.unlink(BACKUP_PATH(ZIP_NAME), (err) => {
@@ -82,7 +83,7 @@ const deleteLocalBackup=(ZIP_NAME)=>{
             } else {
                 resolve({
                     error: 0,
-                    status:'success',
+                    status: 'success',
                     message: "Deleted Local backup",
                     zipName: ZIP_NAME
                 });
@@ -93,7 +94,7 @@ const deleteLocalBackup=(ZIP_NAME)=>{
 
 // S3 Utils Used to check if provided bucket exists If it does not exists then
 // it can create one, and then use it.  Also used to upload File
-const createBucket=(S3)=>{
+const createBucket = (S3) => {
 
     const bucketName = config.s3.bucketName,
         accessPerm = config.s3.accessPerm,
@@ -118,7 +119,7 @@ const createBucket=(S3)=>{
             } else {
                 resolve({
                     error: 0,
-                    status:'success',
+                    status: 'success',
                     url: data.Location,
                     message: 'Sucessfully created Bucket'
                 });
@@ -128,7 +129,7 @@ const createBucket=(S3)=>{
 }
 
 
-const uploadFileToS3=(S3, ZIP_NAME)=>{
+const uploadFileToS3 = (S3, ZIP_NAME) => {
     return new Promise((resolve, reject) => {
         let fileStream = fs.createReadStream(BACKUP_PATH(ZIP_NAME));
 
@@ -198,7 +199,7 @@ const uploadFileToS3=(S3, ZIP_NAME)=>{
 
                 resolve({
                     error: 0,
-                    status:'success',
+                    status: 'success',
                     message: "Upload Successful",
                     data: data
                 });
@@ -208,7 +209,7 @@ const uploadFileToS3=(S3, ZIP_NAME)=>{
 }
 
 
-const uploadBackup=(backupResult)=>{
+const uploadBackup = (backupResult) => {
     let s3 = AWSSetup();
 
     return uploadFileToS3(s3, backupResult.zipName).then(uploadFileResult => {
@@ -231,12 +232,12 @@ const uploadBackup=(backupResult)=>{
     });
 }
 
-const createBackup=()=>{
+const createBackup = () => {
     // Backup Mongo Database
     return backupMongoDatabase().then(result => {
         return Promise.resolve({
             error: 0,
-            status:'success',
+            status: 'success',
             message: "Successfully Created Compressed Archive of Database",
             zipName: result.backupName
         });
@@ -246,7 +247,7 @@ const createBackup=()=>{
 }
 
 
-const backupAndUpload=()=>{
+const backupAndUpload = () => {
     // Check if the configuration is valid
     let isValidConfig = validateConfig();
 

@@ -22,8 +22,8 @@ const restoreMongoDatabase = (ZIP_NAME) => {
 
                 return deleteMongoDatabase().then(result => {
                     const database = config.mongodb.database,
-                        password = null,
-                        username = null,
+                        password = config.mongodb.password || null,
+                        username = config.mongodb.username || null,
                         timezoneOffset = config.timezoneOffset || null,
                         host = config.mongodb.hosts[0].host || null,
                         port = config.mongodb.hosts[0].port || null;

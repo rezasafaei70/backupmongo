@@ -1,6 +1,7 @@
 
 const express = require('express');
 const rateLimit = require('express-rate-limit');
+const cors = require('cors')
 
 if (process.env.NODE_ENV !== 'production') {
   const dotenv = require('dotenv').config({ path: './.env.save.example' });
@@ -10,6 +11,8 @@ const backupScheduler = require('./backupScheduler');
 const AppError = require('./utils/appError');
 
 const app = express();
+
+app.use(cors());
 
 //? access control
 app.use(function (req, res, next) {

@@ -128,6 +128,24 @@ exports.permissionRestorer = (req, res, next) => {
 
 exports.generateKey = (req, res, next) => {
     try {
+
+        const { username, password } = req.body;
+
+        if (!username || !password) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Invalid user!'
+            });
+        }
+
+        if (username !== process.env.API_GENERATEKEY_USERNAME ||
+            password !== process.env.API_GENERATEKEY_PASSWORD) {
+            return res.status(403).json({
+                status: 'fail',
+                message: 'you dont have access to perform this action!'
+            });
+        }
+
         const hash = encrypt(process.env.API_KEY);
 
         if (!hash) {

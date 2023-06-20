@@ -37,12 +37,16 @@ exports.directory = (req, res, next) => {
     try {
         storageHandler.getFilesInDirectory().then(resolved => {
 
-            const files = resolved.data.files
-                .map(file => ({
-                    Key: file.Key,
-                    LastModified: file.LastModified,
-                    Size: file.Size
-                }));
+            let files = [];
+            if (resolved.data.files) {
+                files = resolved.data.files
+                    .sort(x => -x.LastModified)
+                    .map(file => ({
+                        Key: file.Key,
+                        LastModified: file.LastModified.toLocaleString("en-US", { hour12: false }),
+                        Size: file.Size
+                    }));
+            }
 
             res.status(200).json({
                 status: resolved.status,

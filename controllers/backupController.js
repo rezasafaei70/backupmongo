@@ -1,6 +1,7 @@
 const backup = require('./../backup');
 const storageHandler = require('./../storageHandler');
 const pingServer = require('./../utils/pingServer');
+const helper = require('./../utils/helper');
 
 exports.backupDB = (req, res, next) => {
     try {
@@ -43,8 +44,8 @@ exports.directory = (req, res, next) => {
                     .sort(x => -x.LastModified)
                     .map(file => ({
                         Key: file.Key,
-                        LastModified: file.LastModified.toLocaleString("en-US", { hour12: false }),
-                        Size: file.Size
+                        LastModified: helper.formattedDate(file.LastModified),
+                        Size: `${helper.bytesToMB(file.Size)} MB`
                     }));
             }
 

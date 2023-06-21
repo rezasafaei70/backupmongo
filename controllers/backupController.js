@@ -1,6 +1,7 @@
 const backup = require('./../backup');
 const storageHandler = require('./../storageHandler');
 const pingServer = require('./../utils/pingServer');
+const helper = require('./../utils/helper');
 
 exports.backupDB = (req, res, next) => {
     try {
@@ -40,11 +41,11 @@ exports.directory = (req, res, next) => {
             let files = [];
             if (resolved.data.files) {
                 files = resolved.data.files
-                    .sort(x => -x.LastModified)
+                    .sort(x => -new Date(x.LastModified))
                     .map(file => ({
                         Key: file.Key,
-                        LastModified: file.LastModified.toLocaleString("en-US", { hour12: false }),
-                        Size: file.Size
+                        LastModified: helper.formattedDate(file.LastModified),
+                        Size: `${helper.bytesToMB(file.Size)} MB`
                     }));
             }
 
@@ -80,7 +81,7 @@ exports.directory = (req, res, next) => {
 
 exports.deleteStorageBackups = (req, res, next) => {
     try {
-        storageHandler.deleteStorageBackupsByDate().then(resolved => {
+        storageHandler.deleteStorageBackupsByDate(req.body.daysAgo).then(resolved => {
             return res.status(200).json({
                 status: resolved.status,
                 message: resolved.message,

@@ -1,7 +1,7 @@
 
 const express = require('express');
 const rateLimit = require('express-rate-limit');
-const cors = require('cors')
+const cors = require('cors');
 
 if (process.env.NODE_ENV !== 'production') {
   const dotenv = require('dotenv').config({ path: './.env.save' });

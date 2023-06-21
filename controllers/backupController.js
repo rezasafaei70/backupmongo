@@ -41,7 +41,7 @@ exports.directory = (req, res, next) => {
             let files = [];
             if (resolved.data.files) {
                 files = resolved.data.files
-                    .sort(x => -x.LastModified)
+                    .sort(x => -new Date(x.LastModified))
                     .map(file => ({
                         Key: file.Key,
                         LastModified: helper.formattedDate(file.LastModified),

@@ -4,6 +4,11 @@ exports.bytesToMB = (bytes) => {
 }
 
 exports.formattedDate = (date) => {
-    const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false };
-    return date.toLocaleString('en-US', options).replace(/[/]/g, '-').replace(/[,]/g, '');
+    var year = date.toLocaleString("default", { year: "numeric" });
+    var month = date.toLocaleString("default", { month: "2-digit" });
+    var day = date.toLocaleString("default", { day: "2-digit" });
+    var hour = date.toLocaleString("default", { hour: "2-digit", hour12: false });
+    var minute = date.toLocaleString("default", { minute: "2-digit" });
+
+    return `${year}-${month}-${day} ${hour}:${minute}`;
 }

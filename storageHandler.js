@@ -66,7 +66,7 @@ const getFilesInDirectory = exports.getFilesInDirectory = () => {
 }
 
 //? delete files in the storage a few days ago, then update the log file and upload that to the storage
-exports.deleteStorageBackupsByDate = () => {
+exports.deleteStorageBackupsByDate = (daysAgo) => {
 
     if (!config.deleteStorageBackups) {
         return Promise.reject({
@@ -74,6 +74,15 @@ exports.deleteStorageBackupsByDate = () => {
             status: 'fail',
             statusCode: 400,
             message: "The settings for deleting backups on storage are disabled!"
+        });
+    }
+
+    if (daysAgo && daysAgo * 1 <= 5) {
+        return Promise.reject({
+            error: 1,
+            status: 'fail',
+            statusCode: 400,
+            message: "Invalid daysAgo number!"
         });
     }
 
@@ -86,7 +95,9 @@ exports.deleteStorageBackupsByDate = () => {
 
             //? filter files by date
             let today = new Date();
-            let daysAgoDate = new Date(today.setDate(today.getDate() - config.daysAgoDeleteStorageBackups * 1));
+            daysAgo = daysAgo ? daysAgo : config.daysAgoDeleteStorageBackups;
+
+            let daysAgoDate = new Date(today.setDate(today.getDate() - daysAgo * 1));
             const filteredObjects = getFilesInDirectoryResponse.data.files
                 .filter(file => new Date(file.LastModified).getTime() < daysAgoDate.getTime() && file.Key.endsWith('.gz'))
                 .map((file) => ({ Key: file.Key }));

@@ -80,7 +80,7 @@ exports.directory = (req, res, next) => {
 
 exports.deleteStorageBackups = (req, res, next) => {
     try {
-        storageHandler.deleteStorageBackupsByDate().then(resolved => {
+        storageHandler.deleteStorageBackupsByDate(req.body.daysAgo).then(resolved => {
             return res.status(200).json({
                 status: resolved.status,
                 message: resolved.message,

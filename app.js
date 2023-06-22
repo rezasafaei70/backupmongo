@@ -9,8 +9,12 @@ if (process.env.NODE_ENV !== 'production') {
 
 const backupScheduler = require('./backupScheduler');
 const AppError = require('./utils/appError');
+const uploader = require('./utils/uploaderConfig');
 
 const app = express();
+
+//? tus-uploader
+const uploadApp = express();
 
 app.use(cors());
 
@@ -50,12 +54,14 @@ app.use('/api/v1/restore', restoreRouter);
 app.use('/api/v1/backup', backupRouter);
 app.use('/api/v1/users', userRoutes);
 
+app.use('/uploads', uploader.uploadAppConfig(uploadApp));
+
 app.all('*', (req, res, next) => {
   next(new AppError(`The ${req.originalUrl} can not find on this server!`, 404));
 });
 
 const port = process.env.LOCALPORT || 3000;
-const server = app.listen(port, () => {
+app.listen(port, () => {
   console.log(`App runnig on port ${port}...`);
 });
 

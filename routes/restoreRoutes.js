@@ -8,9 +8,9 @@ router
   .route('/')
   .post(authController.protect, restoreController.permissionRestorer, restoreController.restoreDB);
 
-router
-  .route('/local')
-  .post(authController.protect, restoreController.permissionRestorer, restoreController.restoreDBFromLocalCopy);
+// router
+//   .route('/local')
+//   .post(authController.protect, restoreController.permissionRestorer, restoreController.restoreDBFromLocalCopy);
 
 router
   .route('/key')

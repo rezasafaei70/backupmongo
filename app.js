@@ -9,7 +9,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 const backupScheduler = require('./backupScheduler');
 const AppError = require('./utils/appError');
-const uploader = require('./utils/uploaderConfig');
+const restoreMiddleware = require('./middlewares/restoreMiddleware');
 
 const app = express();
 
@@ -54,7 +54,7 @@ app.use('/api/v1/restore', restoreRouter);
 app.use('/api/v1/backup', backupRouter);
 app.use('/api/v1/users', userRoutes);
 
-app.use('/uploads', uploader.uploadAppConfig(uploadApp));
+app.use('/api/v1/restore/local', restoreMiddleware(uploadApp));
 
 app.all('*', (req, res, next) => {
   next(new AppError(`The ${req.originalUrl} can not find on this server!`, 404));

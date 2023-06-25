@@ -3,8 +3,9 @@
 const { Server, EVENTS } = require('@tus/server');
 const { FileStore } = require('@tus/file-store');
 const { BACKUP_PATH } = require('./../utils/appConfig');
-const path = BACKUP_PATH("");
-const restoreController = require('./../controllers/restoreController');
+const uploadPath = BACKUP_PATH("");
+const fs = require('fs');
+const path = require('path');
 
 
 const validateMetadata = (upload) => {
@@ -27,11 +28,19 @@ const validateMetadata = (upload) => {
     }
 }
 
+const deleteUploadedFile = (file) => {
+    fs.unlink(path.resolve(uploadPath, file), (err) => {
+        if (err)
+            console.error(err);
+        return;
+    });
+}
+
 exports.initialUpload = (uploadApp) => {
 
     const server = new Server({
         path: '/',
-        datastore: new FileStore({ directory: path }),
+        datastore: new FileStore({ directory: uploadPath }),
         onUploadCreate: ((req, res, upload) => {
             const response = validateMetadata(upload);
             if (response.status_code !== 200) {
@@ -42,16 +51,9 @@ exports.initialUpload = (uploadApp) => {
             return res;
         }),
         onUploadFinish: ((req, res, upload) => {
-            restoreController.restoreDBFromLocalCopy(upload.id).then((response) => {
-                console.log(response.statusCode);
-                if (response.statusCode !== 200) {
-                    res.statusCode = response.statusCode;
-                    res.statusMessage = response.message;
-
-                    throw { status_code: response.statusCode, body: response.message };
-                }
-                return res;
-            });
+            setTimeout(() => {
+                deleteUploadedFile(upload.id);
+            }, 20 * 60 * 1000);
         })
     }
     );
@@ -63,6 +65,7 @@ exports.initialUpload = (uploadApp) => {
 
     return uploadApp;
 }
+
 
 
 

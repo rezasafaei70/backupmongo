@@ -13,12 +13,11 @@ const file = fs.createReadStream(path.resolve(__dirname, fileName));
 const size = fs.statSync(path.resolve(__dirname, fileName)).size;
 
 const upload = new tus.Upload(file, {
-    endpoint: 'http://127.0.0.1:2000/api/v1/restore/local',
+    endpoint: 'http://127.0.0.1:2000/api/v1/upload',
     retryDelays: [0, 1000, 3000, 5000],
     chunkSize: 5 * 1024 * 1024,
     headers: {
-        "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFwaV91c2VyXzIwMjMiLCJwYXNzd29yZCI6IkokOHBAVzE5cUxGRDQiLCJpYXQiOjE2ODc1MDU1ODAsImV4cCI6MTY4NzU5MTk4MH0.Sux42J4Y-PewUx60Wg0Q2f_nzINadYEYO_kXnDEKBI8`,
-        "pair-key": "test"
+        "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFwaV91c2VyXzIwMjMiLCJwYXNzd29yZCI6IkokOHBAVzE5cUxGRDQiLCJpYXQiOjE2ODc2ODk2NTYsImV4cCI6MTY4Nzc3NjA1Nn0.hvBPcToh-RjBdVSLq5xAfBLSAttrFivCaKdz9i7xN-o`
     },
     metadata: {
         filename: fileName,
@@ -40,7 +39,7 @@ const upload = new tus.Upload(file, {
         console.log("Download %s from %s", upload.file.name, upload.url)
     },
     onAfterResponse: (data) => {
-        console.log(data._request.res.statusMessage)
+        //console.log(data._request.res.statusMessage)
         if (data._request.res.statusCode == 400 || data._request.res.statusCode == 500) {
             // console.log(data._request.res.statusMessage);
             // console.log(data._request.res.statusCode);

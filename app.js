@@ -9,7 +9,8 @@ if (process.env.NODE_ENV !== 'production') {
 
 const backupScheduler = require('./backupScheduler');
 const AppError = require('./utils/appError');
-const restoreMiddleware = require('./middlewares/restoreMiddleware');
+const authController = require('./controllers/authController');
+const uploaderConfig = require('./utils/uploaderConfig');
 
 const app = express();
 
@@ -43,7 +44,7 @@ app.use(express.json());
 
 //limit requests from same api
 const limiter = rateLimit({
-  max: 100,
+  max: 1000,
   windowMs: 60 * 60 * 1000,
   message: 'too many requests from this Ip. please try agian in an hour!',
 });
@@ -54,7 +55,7 @@ app.use('/api/v1/restore', restoreRouter);
 app.use('/api/v1/backup', backupRouter);
 app.use('/api/v1/users', userRoutes);
 
-app.use('/api/v1/restore/local', restoreMiddleware(uploadApp));
+app.use('/api/v1/upload', authController.protect, uploaderConfig.initialUpload(uploadApp));
 
 app.all('*', (req, res, next) => {
   next(new AppError(`The ${req.originalUrl} can not find on this server!`, 404));

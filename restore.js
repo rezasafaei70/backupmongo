@@ -19,51 +19,61 @@ const restoreMongoDatabase = (ZIP_NAME) => {
                 });
             } else {
 
-
-                return deleteMongoDatabase().then(result => {
-                    const database = config.mongodb.database,
-                        password = config.mongodb.password || null,
-                        username = config.mongodb.username || null,
-                        timezoneOffset = config.timezoneOffset || null,
-                        host = config.mongodb.hosts[0].host || null,
-                        port = config.mongodb.hosts[0].port || null;
-
-
-                    // Default command, does not considers username or password
-                    let command = `mongorestore --gzip --archive=${BACKUP_PATH(ZIP_NAME)} -h ${host} --port=${port}`;
-
-                    // When Username and password is provided
-                    if (username && password) {
-                        command = `mongorestore --gzip --archive=${BACKUP_PATH(ZIP_NAME)} -h ${host} --port=${port} -p ${password} -u ${username} --authenticationDatabase admin`;
-                    }
-                    // When Username is provided
-                    if (username && !password) {
-                        command = `mongorestore --gzip --archive=${BACKUP_PATH(ZIP_NAME)} -h ${host} --port=${port} -u ${username}`;
+                fs.readFile(BACKUP_PATH(`${ZIP_NAME}`), 'utf-8', (err, data) => {
+                    if (err) {
+                        return reject({
+                            error: 1,
+                            status: 'fail',
+                            statusCode: 400,
+                            message: "Not Found File!"
+                        });
                     }
 
+                    return deleteMongoDatabase().then(result => {
+                        const database = config.mongodb.database,
+                            password = config.mongodb.password || null,
+                            username = config.mongodb.username || null,
+                            timezoneOffset = config.timezoneOffset || null,
+                            host = config.mongodb.hosts[0].host || null,
+                            port = config.mongodb.hosts[0].port || null;
 
-                    exec(command, (err, stdout, stderr) => {
-                        if (err) {
-                            // Most likely, mongorestore isn't installed or isn't accessible
-                            console.error(err.message);
-                            reject({
-                                error: 1,
-                                status: 'fail',
-                                statusCode: 400,
-                                message: "It is not possible to execute the restore command"
-                            });
-                        } else {
-                            resolve({
-                                error: 0,
-                                status: 'success',
-                                message: "Successfuly Created Restore",
-                                backupName: ZIP_NAME
-                            });
+
+                        // Default command, does not considers username or password
+                        let command = `mongorestore --gzip --archive=${BACKUP_PATH(ZIP_NAME)} -h ${host} --port=${port}`;
+
+                        // When Username and password is provided
+                        if (username && password) {
+                            command = `mongorestore --gzip --archive=${BACKUP_PATH(ZIP_NAME)} -h ${host} --port=${port} -p ${password} -u ${username} --authenticationDatabase admin`;
                         }
-                    });
+                        // When Username is provided
+                        if (username && !password) {
+                            command = `mongorestore --gzip --archive=${BACKUP_PATH(ZIP_NAME)} -h ${host} --port=${port} -u ${username}`;
+                        }
 
-                }, error => {
-                    reject(error);
+
+                        exec(command, (err, stdout, stderr) => {
+                            if (err) {
+                                // Most likely, mongorestore isn't installed or isn't accessible
+                                console.error(err.message);
+                                reject({
+                                    error: 1,
+                                    status: 'fail',
+                                    statusCode: 400,
+                                    message: "It is not possible to execute the restore command"
+                                });
+                            } else {
+                                resolve({
+                                    error: 0,
+                                    status: 'success',
+                                    message: "Successfuly Created Restore",
+                                    backupName: ZIP_NAME
+                                });
+                            }
+                        });
+
+                    }, error => {
+                        reject(error);
+                    });
                 });
             }
         });

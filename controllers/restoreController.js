@@ -52,35 +52,49 @@ exports.restoreDB = (req, res, next) => {
     }
 }
 
-exports.restoreDBFromLocalCopy = (fileName) => {
+//? restore with tus
+exports.restoreDBFromLocalCopy = (req, res, next) => {
     try {
-        if (!fileName) {
-            return ({
-                statusCode: 400,
+
+        const key = req.body.fileName;
+        if (!key) {
+            return res.status(400).json({
                 status: 'fail',
-                message: 'Can not find the uploaded file!'
+                message: 'Please Enter a File!'
             });
         }
-        restoreFromLocalCopy(fileName)
-            .then(resolved => {
-                console.error(resolved);
-                return resolved;
-            }, rejected => {
-                console.error(rejected);
-                return rejected;
-            }).catch(err => {
-                console.error(err);
-                return err;
-            });
+        else {
+            restoreFromLocalCopy(key)
+                .then(resolved => {
+                    return res.status(200).json({
+                        status: 'success',
+                        message: resolved.message
+                    });
+                }, rejected => {
+                    console.error(rejected);
+                    return res.status(rejected.statusCode).json({
+                        status: rejected.status,
+                        message: rejected.message
+                    });
+                }).catch(err => {
+                    console.error(err);
+                    return res.status(500).json({
+                        status: 'error',
+                        message: err.message
+                    });
+                });
+        }
+
     }
     catch (err) {
-        return ({
-            statusCode: 500,
+        console.error(err);
+        return res.status(500).json({
             status: 'error',
             message: err.message
         });
     }
 }
+
 
 //? restore with multer
 // exports.restoreDBFromLocalCopy = (req, res, next) => {

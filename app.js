@@ -9,15 +9,24 @@ if (process.env.NODE_ENV !== 'production') {
 
 const backupScheduler = require('./backupScheduler');
 const AppError = require('./utils/appError');
+const errorController = require('./controllers/errorController');
 const authController = require('./controllers/authController');
 const uploaderConfig = require('./utils/uploaderConfig');
+const iPGuardMiddleware = require('./middlewares/iPGuardMiddleware')
 
 const app = express();
 
 //? tus-uploader
 const uploadApp = express();
 
-app.use(cors());
+//? check whitelist origin
+app.use(cors({
+  origin: (origin, callback) => iPGuardMiddleware.SafeConnect(origin, callback),
+  methods: ['GET', 'POST', 'DELETE', 'UPDATE', 'PUT', 'PATCH']
+}));
+
+//? check ip
+app.use(iPGuardMiddleware.isWhiteListedIP);
 
 //? access control
 app.use(function (req, res, next) {
@@ -71,6 +80,8 @@ process.on('uncaughtException', (err) => {
   console.log(err.name, err.message);
   console.log('uncought exception...');
 });
+
+app.use(errorController);
 
 backupScheduler.initialBackup();
 backupScheduler.automatedBackup();

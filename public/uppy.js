@@ -17,7 +17,7 @@ const upload = new tus.Upload(file, {
     retryDelays: [0, 1000, 3000, 5000],
     chunkSize: 5 * 1024 * 1024,
     headers: {
-        "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFwaV91c2VyXzIwMjMiLCJwYXNzd29yZCI6IkokOHBAVzE5cUxGRDQiLCJpYXQiOjE2ODc2ODk2NTYsImV4cCI6MTY4Nzc3NjA1Nn0.hvBPcToh-RjBdVSLq5xAfBLSAttrFivCaKdz9i7xN-o`
+        "Authorization": `Bearer test`
     },
     metadata: {
         filename: fileName,

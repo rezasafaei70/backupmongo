@@ -9,10 +9,24 @@ if (process.env.NODE_ENV !== 'production') {
 
 const backupScheduler = require('./backupScheduler');
 const AppError = require('./utils/appError');
+const errorController = require('./controllers/errorController');
+const authController = require('./controllers/authController');
+const uploaderConfig = require('./utils/uploaderConfig');
+const iPGuardMiddleware = require('./middlewares/iPGuardMiddleware')
 
 const app = express();
 
-app.use(cors());
+//? tus-uploader
+const uploadApp = express();
+
+//? check whitelist origin
+app.use(cors({
+  origin: (origin, callback) => iPGuardMiddleware.SafeConnect(origin, callback),
+  methods: ['GET', 'POST', 'DELETE', 'UPDATE', 'PUT', 'PATCH']
+}));
+
+//? check ip
+app.use(iPGuardMiddleware.isWhiteListedIP);
 
 //? access control
 app.use(function (req, res, next) {
@@ -39,7 +53,7 @@ app.use(express.json());
 
 //limit requests from same api
 const limiter = rateLimit({
-  max: 100,
+  max: 1000,
   windowMs: 60 * 60 * 1000,
   message: 'too many requests from this Ip. please try agian in an hour!',
 });
@@ -50,12 +64,14 @@ app.use('/api/v1/restore', restoreRouter);
 app.use('/api/v1/backup', backupRouter);
 app.use('/api/v1/users', userRoutes);
 
+app.use('/api/v1/upload', authController.protect, uploaderConfig.initialUpload(uploadApp));
+
 app.all('*', (req, res, next) => {
   next(new AppError(`The ${req.originalUrl} can not find on this server!`, 404));
 });
 
 const port = process.env.LOCALPORT || 3000;
-const server = app.listen(port, () => {
+app.listen(port, () => {
   console.log(`App runnig on port ${port}...`);
 });
 
@@ -64,6 +80,8 @@ process.on('uncaughtException', (err) => {
   console.log(err.name, err.message);
   console.log('uncought exception...');
 });
+
+app.use(errorController);
 
 backupScheduler.initialBackup();
 backupScheduler.automatedBackup();

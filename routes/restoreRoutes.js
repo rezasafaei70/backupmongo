@@ -10,7 +10,9 @@ router
 
 router
   .route('/local')
-  .post(authController.protect, restoreController.permissionRestorer, restoreController.restoreDBFromLocalCopy);
+  .post(
+    authController.protect, restoreController.permissionRestorer,
+    restoreController.restoreDBFromLocalCopy);
 
 router
   .route('/key')

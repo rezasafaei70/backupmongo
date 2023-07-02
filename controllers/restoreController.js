@@ -1,10 +1,10 @@
 const path = require('path');
 
 const { restore, restoreFromLocalCopy } = require('./../restore');
-const uploadMiddleware = require('./../utils/uploadMiddleware');
+//const uploadMiddleware = require('./../utils/uploadMiddleware');
 const { encrypt, decrypt } = require('../utils/appEncryptor');
 
-const uploadBackupFile = uploadMiddleware.single('file');
+//const uploadBackupFile = uploadMiddleware.single('file');
 
 exports.restoreDB = (req, res, next) => {
     try {
@@ -52,43 +52,39 @@ exports.restoreDB = (req, res, next) => {
     }
 }
 
+//? restore with tus
 exports.restoreDBFromLocalCopy = (req, res, next) => {
     try {
-        uploadBackupFile(req, res, function (err) {
-            if (err) {
-                return res.status(400).json({
-                    status: 'fail',
-                    message: err.message
-                });
-            }
-            else if (!req.file) {
-                return res.status(400).json({
-                    status: 'fail',
-                    message: 'Please upload a file!'
-                });
-            }
-            else {
-                restoreFromLocalCopy(req.file.originalname)
-                    .then(resolved => {
-                        return res.status(200).json({
-                            status: 'success',
-                            message: resolved.message
-                        });
-                    }, rejected => {
-                        console.error(rejected);
-                        return res.status(rejected.statusCode).json({
-                            status: rejected.status,
-                            message: rejected.message
-                        });
-                    }).catch(err => {
-                        console.error(err);
-                        return res.status(500).json({
-                            status: 'error',
-                            message: err.message
-                        });
+
+        const key = req.body.fileName;
+        if (!key) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Please Enter a File!'
+            });
+        }
+        else {
+            restoreFromLocalCopy(key)
+                .then(resolved => {
+                    return res.status(200).json({
+                        status: 'success',
+                        message: resolved.message
                     });
-            }
-        });
+                }, rejected => {
+                    console.error(rejected);
+                    return res.status(rejected.statusCode).json({
+                        status: rejected.status,
+                        message: rejected.message
+                    });
+                }).catch(err => {
+                    console.error(err);
+                    return res.status(500).json({
+                        status: 'error',
+                        message: err.message
+                    });
+                });
+        }
+
     }
     catch (err) {
         console.error(err);
@@ -98,6 +94,56 @@ exports.restoreDBFromLocalCopy = (req, res, next) => {
         });
     }
 }
+
+
+//? restore with multer
+// exports.restoreDBFromLocalCopy = (req, res, next) => {
+//     try {
+//         uploadBackupFile(req, res, function (err) {
+//             if (err) {
+//                 return res.status(400).json({
+//                     status: 'fail',
+//                     message: err.message
+//                 });
+//             }
+//             else if (!req.file) {
+//                 return res.status(400).json({
+//                     status: 'fail',
+//                     message: 'Please upload a file!'
+//                 });
+//             }
+//             else {
+//                 restoreFromLocalCopy(req.file.originalname)
+//                     .then(resolved => {
+//                         return res.status(200).json({
+//                             status: 'success',
+//                             message: resolved.message
+//                         });
+//                     }, rejected => {
+//                         console.error(rejected);
+//                         return res.status(rejected.statusCode).json({
+//                             status: rejected.status,
+//                             message: rejected.message
+//                         });
+//                     }).catch(err => {
+//                         console.error(err);
+//                         return res.status(500).json({
+//                             status: 'error',
+//                             message: err.message
+//                         });
+//                     });
+//             }
+//         });
+//     }
+//     catch (err) {
+//         console.error(err);
+//         return res.status(500).json({
+//             status: 'error',
+//             message: err.message
+//         });
+//     }
+// }
+
 
 exports.permissionRestorer = (req, res, next) => {
     try {

@@ -20,10 +20,14 @@ const app = express();
 const uploadApp = express();
 
 //? check whitelist origin
-app.use(cors({
-  origin: (origin, callback) => iPGuardMiddleware.SafeConnect(origin, callback),
-  methods: ['GET', 'POST', 'DELETE', 'UPDATE', 'PUT', 'PATCH']
-}));
+if (process.env.ENABLE_CORS === 'true') {
+  app.use(cors({
+    origin: (origin, callback) => iPGuardMiddleware.SafeConnect(origin, callback),
+    methods: ['GET', 'POST', 'DELETE', 'UPDATE', 'PUT', 'PATCH']
+  }));
+} else {
+  app.use(cors());
+}
 
 //? check ip
 app.use(iPGuardMiddleware.isWhiteListedIP);

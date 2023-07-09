@@ -11,6 +11,9 @@ const intervalTime = ms(process.env.BACKUP_INTERVALTIME);
 
 console.log('interval time backup:', intervalTime);
 
+//?logger
+const logger = require('./logger.js')(module);
+
 //  For one time backup
 exports.initialBackup = () => {
     try {
@@ -19,17 +22,22 @@ exports.initialBackup = () => {
                 status: resolved.status,
                 message: resolved.message
             });
+            logger.info("initialBackup-resolve", { resolved });
 
         }, rejected => {
             console.error({
                 status: rejected.status,
                 message: rejected.message
             });
+            logger.warn("initialBackup-reject", { rejected });
+
         }).catch(err => {
             console.error({
                 status: 'error',
                 message: err.message
             });
+            logger.error("initialBackup-error", { err });
+
         });
     }
     catch (err) {
@@ -37,6 +45,7 @@ exports.initialBackup = () => {
             status: 'error',
             message: err.message
         });
+        logger.error("initialBackup-exception", {}, err.stack);
     }
 }
 
@@ -49,17 +58,19 @@ exports.automatedBackup = () => {
                     status: resolved.status,
                     message: resolved.message
                 });
-
+                logger.info("automatedBackup-resolve", { resolved });
             }, rejected => {
                 console.error({
                     status: rejected.status,
                     message: rejected.message
                 });
+                logger.warn("automatedBackup-reject", { rejected });
             }).catch(err => {
                 console.error({
                     status: 'error',
                     message: err.message
                 });
+                logger.error("automatedBackup-error", { err });
             });
         }, intervalTime);
     }
@@ -68,6 +79,7 @@ exports.automatedBackup = () => {
             status: 'error',
             message: err.message
         });
+        logger.error("automatedBackup-exception", {}, err.stack);
     }
 }
 

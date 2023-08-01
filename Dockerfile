@@ -21,6 +21,14 @@ RUN wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | apt-key add -
 RUN echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list
 RUN apt-get update
 RUN apt-get update
+RUN wget -qO- https://www.mongodb.org/static/pgp/server-6.0.asc | sudo tee /etc/apt/trusted.gpg.d/server-6.0.asc
+RUN apt-get install -y gnupg
+RUN wget -qO- https://www.mongodb.org/static/pgp/server-6.0.asc | sudo tee /etc/apt/trusted.gpg.d/server-6.0.asc
+RUN echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+RUN apt-get update
+RUN apt-get install -y mongodb-mongosh && apt-get install -y mongodb-mongosh-shared-openssl11 && apt-get install -y mongodb-mongosh-shared-openssl11
+
+
 
 # Bundle app source
 COPY . .

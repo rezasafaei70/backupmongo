@@ -150,7 +150,7 @@ exports.deleteStorageBackupsByDate = (daysAgo) => {
                 });
             }
 
-            const limit = 2;
+            const limit = 1000;
             let deletedItems = 0;
             const deletingRange = Math.ceil(filteredObjects.length / limit);
             for (let f = 0; f < deletingRange; f++) {

@@ -4,9 +4,8 @@ const path = require('path'),
     fs = require('fs'),
     exec = require('child_process').exec;
 
-const { config, BACKUP_PATH, logFilePath,
-    AWSSetup, validateConfig, currentTime,
-    upload_file, write_file } = require('./utils/appConfig');
+const { config, BACKUP_PATH,
+    AWSSetup, validateConfig, currentTime } = require('./utils/appConfig');
 
 
 const backupMongoDatabase = () => {
@@ -256,19 +255,7 @@ const backupAndUpload = () => {
         return createBackup().then(backupResult => {
             // Upload it to S3
             return uploadBackup(backupResult).then(uploadBackupResponse => {
-                //Write log file
-                return write_file(logFilePath, uploadBackupResponse).then(writeFileResponse => {
-                    console.log(writeFileResponse);
-                    //Upload log file
-                    return upload_file(logFilePath).then(uploadLogFileResponse => {
-                        console.log(uploadLogFileResponse);
-                        return Promise.resolve(uploadBackupResponse);
-                    }, err => {
-                        return Promise.reject(err);
-                    });
-                }, err => {
-                    return Promise.reject(err);
-                });
+                return Promise.resolve(uploadBackupResponse);
             }, err => {
                 return Promise.reject(err);
             });

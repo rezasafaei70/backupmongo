@@ -1,7 +1,6 @@
 const backup = require('./../backup');
 const storageHandler = require('./../storageHandler');
 const pingServer = require('./../utils/pingServer');
-const helper = require('./../utils/helper');
 
 exports.backupDB = (req, res, next) => {
     try {
@@ -37,18 +36,7 @@ exports.backupDB = (req, res, next) => {
 exports.directory = (req, res, next) => {
     try {
         storageHandler.getFilesInDirectory().then(resolved => {
-
-            let files = [];
-            if (resolved.data.files) {
-                files = resolved.data.files
-                    .sort(x => -new Date(x.LastModified))
-                    .map(file => ({
-                        Key: file.Key,
-                        LastModified: helper.formattedDate(file.LastModified),
-                        Size: `${helper.bytesToMB(file.Size)} MB`
-                    }));
-            }
-
+            const files = resolved.data || [];
             res.status(200).json({
                 status: resolved.status,
                 message: resolved.message,

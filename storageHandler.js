@@ -1,11 +1,12 @@
 
-const { config, AWSSetup, delete_fileRows, upload_file, logFilePath } = require('./utils/appConfig');
+const { config, AWSSetup } = require('./utils/appConfig');
+const helper = require('./utils/helper');
 
 //? delete files in the storage
 const deleteStorageBackups = exports.deleteStorageBackups = (objectsToDelete) => {
 
     //?config aws setup
-    let s3 = AWSSetup();
+    const s3 = AWSSetup();
 
     //? the sample of objects to delete
     // const objectsToDelete = [
@@ -22,7 +23,7 @@ const deleteStorageBackups = exports.deleteStorageBackups = (objectsToDelete) =>
                     error: 0,
                     status: 'success',
                     message: "data deleted successfull!",
-                    data: { files: data.Deleted }
+                    data: { length: data.Deleted.length }
                 });
             })
             .catch(err => {
@@ -36,34 +37,67 @@ const deleteStorageBackups = exports.deleteStorageBackups = (objectsToDelete) =>
     });
 }
 
-//? get storage files
-const getFilesInDirectory = exports.getFilesInDirectory = () => {
+
+const listAllContents = async ({ Bucket, Prefix }) => {
     //?config aws setup
     let s3 = AWSSetup();
-
-    //?get list of objects
-    return new Promise((resolve, reject) => {
-        s3.listObjects({ Bucket: config.s3.bucketName })
-            .promise()
-            .then(data => {
-                const files = data.Contents.map(file => file);
-                resolve({
-                    error: 0,
-                    status: 'success',
-                    message: "data retrieved successfull!",
-                    data: { files }
-                });
+    // repeatedly calling AWS list objects because it only returns 1000 objects
+    let list = [];
+    let shouldContinue = true;
+    let nextContinuationToken = null;
+    while (shouldContinue) {
+        let res = await s3
+            .listObjectsV2({
+                Bucket,
+                Prefix,
+                ContinuationToken: nextContinuationToken || undefined,
             })
-            .catch(err => {
-                return reject({
-                    error: 1,
-                    status: 'error',
-                    statusCode: 500,
-                    message: err.message
-                });
+            .promise();
+        list = [...list, ...res.Contents];
+
+        if (!res.IsTruncated) {
+            shouldContinue = false;
+            nextContinuationToken = null;
+        } else {
+            nextContinuationToken = res.NextContinuationToken;
+        }
+    }
+    return list;
+};
+
+//? get storage files
+exports.getFilesInDirectory = () => {
+
+    return new Promise((resolve, reject) => {
+
+        listAllContents({ Bucket: config.s3.bucketName, Prefix: undefined }).then((data) => {
+
+            const files = data.sort(x => -new Date(x.LastModified))
+                .map(file => ({
+                    Key: file.Key,
+                    LastModified: helper.formattedDate(file.LastModified),
+                    Size: `${helper.bytesToMB(file.Size)} MB`
+                }));
+
+            resolve({
+                error: 0,
+                status: 'success',
+                message: "data retrieved successfull!",
+                data: files
             });
+
+        }).catch((error) => {
+            return reject({
+                error: 1,
+                status: 'error',
+                statusCode: 500,
+                message: error.message
+            });
+        });
+
     });
 }
+
 
 //? delete files in the storage a few days ago, then update the log file and upload that to the storage
 exports.deleteStorageBackupsByDate = (daysAgo) => {
@@ -87,19 +121,24 @@ exports.deleteStorageBackupsByDate = (daysAgo) => {
     }
 
     return new Promise((resolve, reject) => {
-        //? getall files from storage
-        getFilesInDirectory().then((getFilesInDirectoryResponse) => {
-            if (getFilesInDirectoryResponse.data.files.length === 0) {
-                return reject(getFilesInDirectoryResponse);
-            }
+
+        listAllContents({ Bucket: config.s3.bucketName, Prefix: undefined }).then((data) => {
+
+            if (data.length === 0)
+                return reject({
+                    error: 1,
+                    status: 'fail',
+                    statusCode: 404,
+                    message: 'not found data!'
+                });
 
             //? filter files by date
-            let today = new Date();
+            const today = new Date();
             daysAgo = daysAgo ? daysAgo : config.daysAgoDeleteStorageBackups;
+            const daysAgoDate = new Date(today.setDate(today.getDate() - daysAgo * 1));
 
-            let daysAgoDate = new Date(today.setDate(today.getDate() - daysAgo * 1));
-            const filteredObjects = getFilesInDirectoryResponse.data.files
-                .filter(file => new Date(file.LastModified).getTime() < daysAgoDate.getTime() && file.Key.endsWith('.gz'))
+            const filteredObjects = data.filter(file =>
+                new Date(file.LastModified).getTime() < daysAgoDate.getTime() && file.Key.endsWith('.gz'))
                 .map((file) => ({ Key: file.Key }));
 
             if (filteredObjects.length === 0) {
@@ -111,41 +150,34 @@ exports.deleteStorageBackupsByDate = (daysAgo) => {
                 });
             }
 
-            //? delete files from storage
-            deleteStorageBackups(filteredObjects)
-                .then((deleteStorageBackupsResponse) => {
+            const limit = 2;
+            let deletedItems = 0;
+            const deletingRange = Math.ceil(filteredObjects.length / limit);
+            for (let f = 0; f < deletingRange; f++) {
+                //? delete files from storage
+                deleteStorageBackups(filteredObjects.slice(f, limit * (f + 1)))
+                    .then((deleteStorageBackupsResponse) => {
+                        deletedItems += deleteStorageBackupsResponse;
+                        if (f === deletingRange - 1) {
+                            resolve(deleteStorageBackupsResponse);
+                        }
+                    })
+                    .catch((error) => {
+                        return reject(error);
+                    });
+            }
 
-                    const length = deleteStorageBackupsResponse.data.files.length;
-                    if (length === 0) {
-                        return reject(deleteStorageBackupsResponse);
-                    }
-
-                    //? update log text file
-                    delete_fileRows(logFilePath, filteredObjects.map((file) => file.Key))
-                        .then((response) => {
-                            //?upload log text file on the storage
-                            upload_file(logFilePath).then((res) => {
-                                resolve({
-                                    error: 0,
-                                    data: { length },
-                                    status: 'success',
-                                    message: "upload the log file was done successfully after deleting the files!"
-                                });
-                            })
-                        })
-                        .catch((error) => {
-                            return reject(error);
-                        });
-                })
-                .catch((error) => {
-                    return reject(error);
-                });
-        })
-            .catch((error) => {
-                return reject(error);
+        }).catch((error) => {
+            return reject({
+                error: 1,
+                status: 'error',
+                statusCode: 500,
+                message: error.message
             });
+        });
     });
 }
+
 
 //? get file url with authentication header, for client download it
 exports.getSignedFileUrl = (key) => {

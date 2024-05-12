@@ -12,7 +12,7 @@ const path = require('path'),
         .split("node_modules")[0];
 
 exports.BACKUP_PATH = (ZIP_NAME) => path.resolve(os.tmpdir(), ZIP_NAME);
-exports.logFilePath = `${PROJECT_ROOT}/database/temp/backup.txt`;
+// exports.logFilePath = `${PROJECT_ROOT}/database/temp/backup.txt`;
 
 const config = exports.config = {
     // mongodb: `mongodb://${process.env.USERNAME}:${process.env.PASSWORD}@${process.env.HOST}:${process.env.PORT}/${process.env.DATABSE}`,

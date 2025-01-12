@@ -1,18 +1,15 @@
-
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 
-if (process.env.NODE_ENV !== 'production') {
-  const dotenv = require('dotenv').config({ path: './.env.save' });
-}
+require('dotenv').config();
 
 const backupScheduler = require('./backupScheduler');
 const AppError = require('./utils/appError');
 const errorController = require('./controllers/errorController');
 const authController = require('./controllers/authController');
 const uploaderConfig = require('./utils/uploaderConfig');
-const iPGuardMiddleware = require('./middlewares/iPGuardMiddleware')
+const iPGuardMiddleware = require('./middlewares/iPGuardMiddleware');
 
 const app = express();
 
@@ -21,10 +18,12 @@ const uploadApp = express();
 
 //? check whitelist origin
 if (process.env.ENABLE_CORS === 'true') {
-  app.use(cors({
-    origin: (origin, callback) => iPGuardMiddleware.SafeConnect(origin, callback),
-    methods: ['GET', 'POST', 'DELETE', 'UPDATE', 'PUT', 'PATCH']
-  }));
+  app.use(
+    cors({
+      origin: (origin, callback) => iPGuardMiddleware.SafeConnect(origin, callback),
+      methods: ['GET', 'POST', 'DELETE', 'UPDATE', 'PUT', 'PATCH'],
+    })
+  );
 } else {
   app.use(cors());
 }
@@ -34,16 +33,10 @@ app.use(iPGuardMiddleware.isWhiteListedIP);
 
 //? access control
 app.use(function (req, res, next) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept"
-  );
-  res.setHeader("Access-Control-Allow-Credentials", true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.setHeader('Access-Control-Allow-Credentials', true);
   next();
 });
 

@@ -1,6 +1,7 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const cors = require('cors');
+const { version } = require('./package.json');
 
 require('dotenv').config();
 
@@ -63,7 +64,14 @@ app.use('/api/v1/users', userRoutes);
 
 app.use('/api/v1/upload', authController.protect, uploaderConfig.initialUpload(uploadApp));
 
-app.all('*', (req, res, next) => {
+//? home route
+app.get('/', async (req, res) => {
+  res.status(200).json({
+    'Welcome to': `Backup v${version}`,
+  });
+});
+      
+app.get('*', (req, res, next) => {
   next(new AppError(`The ${req.originalUrl} can not find on this server!`, 404));
 });
 
@@ -79,6 +87,5 @@ process.on('uncaughtException', (err) => {
 });
 
 app.use(errorController);
-
 backupScheduler.initialBackup();
 backupScheduler.automatedBackup();

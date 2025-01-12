@@ -1,37 +1,30 @@
-FROM node:20.9.0
+FROM node:20.9.0-alpine
 
 # Create app directory
 WORKDIR /usr/src/app
 
+# Install system dependencies and MongoDB/PostgreSQL tools
+RUN apk add --no-cache \
+  curl \
+  wget \
+  gnupg \
+  tar \
+  bash \
+  postgresql-client \
+  && wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2004-x86_64-100.6.1.deb \
+  && tar -xvf mongodb-database-tools-ubuntu2004-x86_64-100.6.1.deb -C /usr/local/bin \
+  && rm -rf mongodb-database-tools-ubuntu2004-x86_64-100.6.1.deb
+
 # Install app dependencies
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
-# where available (npm@5+)
 COPY package*.json ./
-
-RUN npm install
-# If you are building your code for production
-# RUN npm ci --only=production
-RUN npm i -g pm2
-RUN wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2004-x86_64-100.6.1.deb
-RUN dpkg -i ./mongodb-database-tools-ubuntu2004-x86_64-100.6.1.deb
-
-RUN wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | apt-key add -
-RUN apt-get install gnupg
-RUN wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | apt-key add -
-RUN echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list
-RUN apt-get update
-RUN apt-get update
-RUN wget -qO- https://www.mongodb.org/static/pgp/server-6.0.asc | tee /etc/apt/trusted.gpg.d/server-6.0.asc
-RUN apt-get install -y gnupg
-RUN wget -qO- https://www.mongodb.org/static/pgp/server-6.0.asc | tee /etc/apt/trusted.gpg.d/server-6.0.asc
-RUN echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list
-RUN apt-get update
-RUN apt-get install -y mongodb-mongosh 
-
-
+RUN npm install --only=production
+RUN npm install -g pm2
 
 # Bundle app source
 COPY . .
 
+# Expose port
 EXPOSE 8080
-CMD [ "pm2-runtime","start", "app.js" ]
+
+# Run the application with PM2
+CMD ["pm2-runtime", "start", "app.js"]
